@@ -2,11 +2,8 @@ package curves
 
 import (
 	"crypto/elliptic"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"math/big"
 )
 
@@ -95,46 +92,4 @@ func (p *ECPoint) UnmarshalJSON(payload []byte) error {
 		return fmt.Errorf("UnmarshalJSON error, point not on the curves ")
 	}
 	return nil
-}
-
-func (p *ECPoint) PointToEcdsaPubKey() string {
-	publicKey := btcec.PublicKey{Curve: p.Curve, X: p.X, Y: p.Y}
-	return hex.EncodeToString(publicKey.SerializeCompressed())
-}
-
-func (p *ECPoint) PointToEd25519PubKey() string {
-	publicKey := edwards.PublicKey{Curve: p.Curve, X: p.X, Y: p.Y}
-	return hex.EncodeToString(publicKey.SerializeCompressed())
-}
-
-func EcdsaPubKeyToPoint(pubkeyStr string) (ECPoint, error) {
-	pubKeyBytes, err := hex.DecodeString(pubkeyStr)
-	if err != nil {
-		return ECPoint{}, err
-	}
-	publicKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
-	if err != nil {
-		return ECPoint{}, err
-	}
-	return ECPoint{
-		X:     publicKey.X,
-		Y:     publicKey.Y,
-		Curve: publicKey.Curve,
-	}, nil
-}
-
-func Ed25519PubKeyToPoint(pubkeyStr string) (ECPoint, error) {
-	pubKeyBytes, err := hex.DecodeString(pubkeyStr)
-	if err != nil {
-		return ECPoint{}, err
-	}
-	publicKey, err := edwards.ParsePubKey(pubKeyBytes)
-	if err != nil {
-		return ECPoint{}, err
-	}
-	return ECPoint{
-		X:     publicKey.X,
-		Y:     publicKey.Y,
-		Curve: publicKey.Curve,
-	}, nil
 }
