@@ -116,7 +116,7 @@ Schnorr non-interactive zero-knowledge (NIZK) proof[5] is a non-interactive vari
 2. Alice chooses a random number v, computes V = v&sdot;G, and sends V to Bob
 3. Alice computes the challenge c = H(G || V || A)
 4. Alice computes r = v – a * c mod n and sends it to Bob
-5. Bob verifies V = rG + cA
+5. Bob verifies V = r&sdot;G + c&sdot;A
 
 ## 5、Threshold Scheme Overview
 
@@ -160,7 +160,7 @@ After obtaining the message to be signed, Alice and Bob jointly generate the sig
 Generate key shares for each party using Feldman's VSS protocol. After obtaining the message to be signed m, any two parties can jointly generate a signature as follows:
 
 1. Alice and Bob respectively compute x1 and x2 by performing a Lagrange interpolation on their own share<sub>i</sub>. The complete private key x=x1+x2.
-2. Alice and Bob respectively generate random numbers r1 and r2, and respectively compute R1=r1*G, R2=r2*G. Then both Alice and Bob learn R=R1+R2. Commitments and zero-knowledge proofs are used to ensure the security of the learning process.
+2. Alice and Bob respectively generate random numbers r1 and r2, and respectively compute R1=r1&sdot;G, R2=r2&sdot;G. Then both Alice and Bob learn R=R1+R2. Commitments and zero-knowledge proofs are used to ensure the security of the learning process.
 3. Each party can compute h=sha512(R, pub, m), where pub is the public key corresponding to the complete private key x.
 4. Alice and Bob each compute their own signature si=ri+h*xi, and send the signature result to the other party.
 5. Compute the complete signature s=s1+s2, and verify the signature using the public key.
@@ -173,7 +173,7 @@ If a party's share is lost or leaked, or if new participants join, a new set of 
 
 The derivation rule is similar to BIP32, where no party knows the complete private key and can only perform non-hardened derivation. The chaincode is generated jointly by multiple parties during the key generation phase and is not changed during the refresh phase.
 
-After Key Generation, each party has its own share, and all shares are related and on the same curve. Each share can be derived along the same path to obtain a child key share, which is also on the same curve, resulting in a new set of key shares.
+After Key Generation, each party has its own share, and all shares are correlated and on the same curve. Each share can be derived along the same path to obtain a child key share, which is also on the same curve, resulting in a new set of key shares.
 
 ![tss-bip32](./images/tss-bip32.png)
 
@@ -195,4 +195,4 @@ Based on the Lindell 17’ protocol, we propose improvements for secure multi-pa
 [5] Hao, F. (2017, September). RFC 8235: Schnorr Non-interactive Zero-Knowledge
 Proof. https://www.rfc-editor.org/rfc/rfc8235
 
-[6] [Unbound_Cryptocurrency_Wallet_Library_White_Paper](https://github.com/unboundsecurity/blockchain-crypto-mpc/blob/master/docs/Unbound_Cryptocurrency_Wallet_Library_White_Paper.md)
+[6] Lindell, Y. (2019). [Unbound_Cryptocurrency_Wallet_Library_White_Paper](https://github.com/unboundsecurity/blockchain-crypto-mpc/blob/master/docs/Unbound_Cryptocurrency_Wallet_Library_White_Paper.md)
