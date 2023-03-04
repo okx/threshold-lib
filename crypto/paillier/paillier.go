@@ -65,17 +65,24 @@ func NewKeyPair(concurrency ...int) (*PrivateKey, *PublicKey, error) {
 	return privateKey, publicKey, nil
 }
 
-// Encrypt public key encrypt
+// Encrypt E(m) =  (g^m) * (r^n) mod n^2
 func (pk *PublicKey) Encrypt(m *big.Int) (*big.Int, error) {
-	c, _, err := pk.EncryptRandom(m)
+	r, err := getRandom(pk.N)
+	if err != nil {
+		return nil, fmt.Errorf("getRandom error")
+	}
+	c, err := pk.EncryptWithR(m, r)
+	if err != nil {
+		return nil, fmt.Errorf("EncryptRandom error")
+	}
 	return c, err
 }
 
-func (pk *PublicKey) EncryptRandom(m *big.Int) (c *big.Int, r *big.Int, err error) {
+// EncryptWithR E(m) =  (g^m) * (r^n) mod n^2
+func (pk *PublicKey) EncryptWithR(m, r *big.Int) (c *big.Int, err error) {
 	if m.Cmp(zero) == -1 || m.Cmp(pk.N) != -1 { // 0 <=  m < N
-		return nil, nil, fmt.Errorf("m range error")
+		return nil, fmt.Errorf("m range error")
 	}
-	r, err = getRandom(pk.N)
 	N2 := pk.n2()
 	// g^m mod N2
 	Gm := new(big.Int).Exp(pk.g(), m, N2)
@@ -86,7 +93,8 @@ func (pk *PublicKey) EncryptRandom(m *big.Int) (c *big.Int, r *big.Int, err erro
 	return
 }
 
-func (pk *PublicKey) HomoMul(m, c1 *big.Int) (*big.Int, error) {
+// HomoMulPlain  E(ab) = E(a) ^ b mod n^2
+func (pk *PublicKey) HomoMulPlain(c1, m *big.Int) (*big.Int, error) {
 	if m.Cmp(zero) == -1 || m.Cmp(pk.N) != -1 { // 0 <=  m < N
 		return nil, fmt.Errorf("m range error")
 	}
@@ -98,6 +106,7 @@ func (pk *PublicKey) HomoMul(m, c1 *big.Int) (*big.Int, error) {
 	return new(big.Int).Exp(c1, m, N2), nil
 }
 
+// HomoAdd E(ab)=E(a)*E(b) mod n^2
 func (pk *PublicKey) HomoAdd(c1, c2 *big.Int) (*big.Int, error) {
 	N2 := pk.n2()
 	if c1.Cmp(zero) == -1 || c1.Cmp(N2) != -1 { //  // 0 <= c1 < N2
@@ -110,6 +119,20 @@ func (pk *PublicKey) HomoAdd(c1, c2 *big.Int) (*big.Int, error) {
 	return new(big.Int).Mod(new(big.Int).Mul(c1, c2), N2), nil
 }
 
+// HomoAddPlain   E(a+b) = E(a) * g^b mod n^2
+//						 = E(a) * (1 + b*n) mod n^2
+func (pk *PublicKey) HomoAddPlain(eA, b *big.Int) (*big.Int, error) {
+	N2 := pk.n2()
+	if eA.Cmp(zero) == -1 || eA.Cmp(N2) != -1 { //  // 0 <= eA < N2
+		return nil, fmt.Errorf("eA range error")
+	}
+	if b.Cmp(zero) == -1 || b.Cmp(pk.N) != -1 { //  // 0 <= b < N
+		return nil, fmt.Errorf("c2 range error")
+	}
+	gb := new(big.Int).Add(new(big.Int).Mul(b, pk.N), one)
+	return new(big.Int).Mod(new(big.Int).Mul(eA, gb), N2), nil
+}
+
 // n*n
 func (pk *PublicKey) n2() *big.Int {
 	return new(big.Int).Mul(pk.N, pk.N)
@@ -120,7 +143,7 @@ func (pk *PublicKey) g() *big.Int {
 	return new(big.Int).Add(pk.N, one)
 }
 
-// Decrypt private key decrypt
+// Decrypt m = L(c^lambda mod n^2) * mu mod n
 func (priv *PrivateKey) Decrypt(c *big.Int) (m *big.Int, err error) {
 	N2 := priv.n2()
 	if c.Cmp(zero) == -1 || c.Cmp(N2) != -1 { // 0 <= c < N2
