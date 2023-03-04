@@ -18,3 +18,5 @@ See the [Threshold Signature Scheme](docs/Threshold_Signature_Scheme.md) for mor
 library.
 
 ## License
+
+   [Apache-2.0 license](./LICENSE)

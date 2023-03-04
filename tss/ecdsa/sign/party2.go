@@ -73,33 +73,25 @@ func (p2 *P2Context) Step2(cmtD *commitment.Witness, p1Proof *schnorr.Proof) (*b
 	if err != nil {
 		return nil, err
 	}
+	k2_1 := new(big.Int).ModInverse(p2.k2, q)
+
 	h := CalculateM(bytes)
+	h = new(big.Int).Mul(h, k2_1) // h/k2
 
 	rho := crypto.RandomNum(new(big.Int).Mul(q, q))
 	rhoq := new(big.Int).Mul(rho, q)
-	h_rhoq := new(big.Int).Add(h, rhoq) // h + rho*q
-	E_h_rhoq, err := p2.paiPub.Encrypt(h_rhoq)
+	h_rhoq := new(big.Int).Add(h, rhoq) // h/k2 + rho*q
+
+	E_x, err := p2.paiPub.HomoAddPlain(p2.E_x1, p2.x2)
 	if err != nil {
 		return nil, err
 	}
-	E_x2, err := p2.paiPub.Encrypt(p2.x2)
+	r = new(big.Int).Mul(r, k2_1) //  r/k2
+	E_xr, err := p2.paiPub.HomoMulPlain(E_x, r)
 	if err != nil {
 		return nil, err
 	}
-	E_x1x2, err := p2.paiPub.HomoAdd(E_x2, p2.E_x1)
-	if err != nil {
-		return nil, err
-	}
-	E_xr, err := p2.paiPub.HomoMul(r, E_x1x2)
-	if err != nil {
-		return nil, err
-	}
-	E_h_xr, err := p2.paiPub.HomoAdd(E_xr, E_h_rhoq)
-	if err != nil {
-		return nil, err
-	}
-	k2_1 := new(big.Int).ModInverse(p2.k2, q)
-	E_k2_h_xr, err := p2.paiPub.HomoMul(k2_1, E_h_xr)
+	E_k2_h_xr, err := p2.paiPub.HomoAddPlain(E_xr, h_rhoq)
 	if err != nil {
 		return nil, err
 	}
