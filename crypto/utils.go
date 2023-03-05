@@ -3,6 +3,7 @@ package crypto
 import (
 	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
 	"math/big"
@@ -12,9 +13,19 @@ var (
 	one = big.NewInt(1)
 )
 
-// SHA512Int sha512 []*big.Int
+// SHA512Int hmac sha512 []*big.Int
 func SHA512Int(in ...*big.Int) *big.Int {
 	hash := hmac.New(sha512.New, nil)
+	for _, n := range in {
+		hash.Write(n.Bytes())
+	}
+	bytes := hash.Sum(nil)
+	return new(big.Int).SetBytes(bytes)
+}
+
+// SHA256Int sha256 []*big.Int
+func SHA256Int(in ...*big.Int) *big.Int {
+	hash := sha256.New()
 	for _, n := range in {
 		hash.Write(n.Bytes())
 	}
