@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	PaillierPrimeBits = 1024
+	PrimeBits = 2048
 )
 
 type (
@@ -42,7 +42,7 @@ func NewKeyPair(concurrency ...int) (*PrivateKey, *PublicKey, error) {
 	var p, q *big.Int
 	for p == q {
 		for i := 0; i < currency; i++ {
-			go crypto.GenerateSafePrime(PaillierPrimeBits, values, quit)
+			go crypto.GenerateSafePrime(PrimeBits/2, values, quit)
 		}
 		p, q = <-values, <-values
 		close(quit)

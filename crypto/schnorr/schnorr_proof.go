@@ -22,7 +22,7 @@ func Prove(x *big.Int, X *curves.ECPoint) (*Proof, error) {
 	r := crypto.RandomNum(q)
 	R := curves.ScalarToPoint(X.Curve, r)
 
-	h := crypto.SHA512Int(X.X, X.Y, R.X, R.Y)
+	h := crypto.SHA256Int(X.X, X.Y, R.X, R.Y)
 	h = new(big.Int).Mod(h, q)
 
 	s := new(big.Int).Mul(h, x)
@@ -36,7 +36,7 @@ func Verify(pf *Proof, X *curves.ECPoint) bool {
 		return false
 	}
 	q := X.Curve.Params().N
-	h := crypto.SHA512Int(X.X, X.Y, pf.R.X, pf.R.Y)
+	h := crypto.SHA256Int(X.X, X.Y, pf.R.X, pf.R.Y)
 	h = new(big.Int).Mod(h, q)
 
 	SG := curves.ScalarToPoint(X.Curve, pf.S)

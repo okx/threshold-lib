@@ -90,9 +90,8 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 		return nil, fmt.Errorf("schnorr signature verification error")
 	}
 	// checking paillier keys correct size
-	expKeySize := 2 * paillier.PaillierPrimeBits
 	bitlen := p1Data.PaiPubKey.N.BitLen()
-	if bitlen != expKeySize && bitlen != expKeySize-1 {
+	if bitlen != paillier.PrimeBits && bitlen != paillier.PrimeBits-1 {
 		return nil, fmt.Errorf("invalid paillier keys")
 	}
 	// todo: more check for paillier public key
