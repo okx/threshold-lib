@@ -6,7 +6,6 @@ import (
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/vss"
-
 	"math/big"
 )
 
@@ -29,8 +28,8 @@ type SetupInfo struct {
 }
 
 func NewSetUp(deviceNumber, total int, curve elliptic.Curve) *SetupInfo {
-	if total < 2 || deviceNumber > total {
-		panic(fmt.Errorf("total less than 2, or deviceNumber more than total"))
+	if total < 2 || deviceNumber > total || deviceNumber <= 0 {
+		panic(fmt.Errorf("NewSetUp params error"))
 	}
 	info := &SetupInfo{
 		DeviceNumber: deviceNumber,
@@ -40,4 +39,12 @@ func NewSetUp(deviceNumber, total int, curve elliptic.Curve) *SetupInfo {
 		curve:        curve,
 	}
 	return info
+}
+
+func (info *SetupInfo) Ids() []int {
+	var ids []int
+	for i := 1; i <= info.Total; i++ {
+		ids = append(ids, i)
+	}
+	return ids
 }

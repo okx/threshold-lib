@@ -2,6 +2,7 @@ package reshare
 
 import (
 	"crypto/elliptic"
+	"fmt"
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/curves"
@@ -30,6 +31,9 @@ type RefreshInfo struct {
 
 // NewRefresh the process is consistent with dkg
 func NewRefresh(deviceNumber, total int, devoteList [2]int, ShareI *big.Int, PublicKey *curves.ECPoint) *RefreshInfo {
+	if total < 2 || deviceNumber > total || deviceNumber <= 0 {
+		panic(fmt.Errorf("NewRefresh params error"))
+	}
 	curve := PublicKey.Curve
 	info := &RefreshInfo{
 		DeviceNumber: deviceNumber,
@@ -51,4 +55,12 @@ func NewRefresh(deviceNumber, total int, devoteList [2]int, ShareI *big.Int, Pub
 		info.isDevotee = false
 	}
 	return info
+}
+
+func (info *RefreshInfo) Ids() []int {
+	var ids []int
+	for i := 1; i <= info.Total; i++ {
+		ids = append(ids, i)
+	}
+	return ids
 }

@@ -38,8 +38,8 @@ func (info *RefreshInfo) DKGStep1() (map[int]*tss.Message, error) {
 	info.RoundNumber = 2
 
 	out := make(map[int]*tss.Message, info.Total-1)
-	for i := 1; i <= info.Total; i++ {
-		if i == info.DeviceNumber {
+	for _, id := range info.Ids() {
+		if id == info.DeviceNumber {
 			continue
 		}
 		content := tss.KeyStep1Data{C: &hashCommitment.C}
@@ -49,10 +49,10 @@ func (info *RefreshInfo) DKGStep1() (map[int]*tss.Message, error) {
 		}
 		message := &tss.Message{
 			From: info.DeviceNumber,
-			To:   i,
+			To:   id,
 			Data: string(bytes),
 		}
-		out[i] = message
+		out[id] = message
 	}
 	return out, nil
 }
