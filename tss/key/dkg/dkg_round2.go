@@ -39,14 +39,14 @@ func (info *SetupInfo) DKGStep2(msgs []*tss.Message) (map[int]*tss.Message, erro
 	info.RoundNumber = 3
 
 	out := make(map[int]*tss.Message, info.Total-1)
-	for i := 1; i <= info.Total; i++ {
-		if i == info.DeviceNumber {
+	for _, id := range info.Ids() {
+		if id == info.DeviceNumber {
 			continue
 		}
 		// step2: commitment data、secretShares and schnorr proof for ui
 		content := tss.KeyStep2Data{
 			Witness: info.deC,
-			Share:   info.secretShares[i-1],
+			Share:   info.secretShares[id-1],
 			Proof:   proof,
 		}
 		bytes, err := json.Marshal(content)
@@ -55,10 +55,10 @@ func (info *SetupInfo) DKGStep2(msgs []*tss.Message) (map[int]*tss.Message, erro
 		}
 		message := &tss.Message{
 			From: info.DeviceNumber,
-			To:   i,
+			To:   id,
 			Data: string(bytes),
 		}
-		out[i] = message
+		out[id] = message
 	}
 	return out, nil
 }

@@ -40,7 +40,10 @@ func NewTssKey(shareI *big.Int, publicKey *curves.ECPoint, chaincode string) (*T
 // NewChildKey like bip32 non-hardened derivation
 func (tssKey *TssKey) NewChildKey(childIdx uint32) (*TssKey, error) {
 	curve := tssKey.publicKey.Curve
-	intermediary := calPrivateOffset(tssKey.publicKey.X.Bytes(), tssKey.chaincode, childIdx)
+	intermediary, err := calPrivateOffset(tssKey.publicKey.X.Bytes(), tssKey.chaincode, childIdx)
+	if err != nil {
+		return nil, err
+	}
 	offset := new(big.Int).SetBytes(intermediary[:32])
 	point := curves.ScalarToPoint(curve, offset)
 	ecPoint, err := tssKey.publicKey.Add(point)
@@ -79,12 +82,17 @@ func (tssKey *TssKey) PublicKey() *curves.ECPoint {
 }
 
 // calPrivateOffset sha512(label | chaincode | publicKey | childIdx)
-func calPrivateOffset(publicKey, chaincode []byte, childIdx uint32) []byte {
+func calPrivateOffset(publicKey, chaincode []byte, childIdx uint32) ([]byte, error) {
 	hash := hmac.New(sha512.New, label)
-	hash.Write(chaincode)
-	hash.Write(publicKey)
-	hash.Write(uint32Bytes(childIdx))
-	return hash.Sum(nil)
+	var data []byte
+	data = append(data, chaincode...)
+	data = append(data, publicKey...)
+	data = append(data, uint32Bytes(childIdx)...)
+	_, err := hash.Write(data)
+	if err != nil {
+		return nil, err
+	}
+	return hash.Sum(nil), nil
 }
 
 func uint32Bytes(i uint32) []byte {
