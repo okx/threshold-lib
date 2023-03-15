@@ -47,8 +47,8 @@ func TestEcdsaSign(t *testing.T) {
 	p1Data, p2Data, _ := KeyGen()
 
 	fmt.Println("=========2/2 keygen==========")
-	paiPrivate, paiPublicKey, _ := paillier.NewKeyPair(8)
-	p1Dto, _ := keygen.P1(p1Data.ShareI, paiPublicKey, p1Data.Id, p2Data.Id)
+	paiPrivate, _, _ := paillier.NewKeyPair(8)
+	p1Dto, _ := keygen.P1(p1Data.ShareI, paiPrivate, p1Data.Id, p2Data.Id)
 	publicKey, _ := curves.NewECPoint(curve, p2Data.PublicKey.X, p2Data.PublicKey.Y)
 	p2SaveData, err := keygen.P2(p2Data.ShareI, publicKey, p1Dto, p1Data.Id, p2Data.Id)
 	fmt.Println(p2SaveData, err)

@@ -21,13 +21,15 @@ type P1Data struct {
 	Proof     *schnorr.Proof
 	PaiPubKey *paillier.PublicKey // paillier public key
 	X1        *curves.ECPoint
+	NIZKProof []string
 }
 
 // P1 after dkg, prepare for 2-party signature, P1 send encrypt x1 to P2
 // paillier key pair generation is time-consuming, generated in advance, encrypted storage?
-func P1(share1 *big.Int, paiPubKey *paillier.PublicKey, from, to int) (*tss.Message, error) {
+func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int) (*tss.Message, error) {
 	// lagrangian interpolation x1
 	x1 := vss.CalLagrangian(curve, big.NewInt(int64(from)), share1, []*big.Int{big.NewInt(int64(from)), big.NewInt(int64(to))})
+	paiPubKey := &paiPriKey.PublicKey
 	// paillier encrypt x1
 	E_x1, err := paiPubKey.Encrypt(x1)
 	if err != nil {
@@ -39,11 +41,16 @@ func P1(share1 *big.Int, paiPubKey *paillier.PublicKey, from, to int) (*tss.Mess
 	if err != nil {
 		return nil, err
 	}
+	nizkProof, err := paillier.NIZKProof(paiPriKey.N, paiPriKey.Phi)
+	if err != nil {
+		return nil, err
+	}
 	p1Data := P1Data{
 		E_x1:      E_x1,
 		Proof:     proof,
 		PaiPubKey: paiPubKey,
 		X1:        X1,
+		NIZKProof: nizkProof,
 	}
 	bytes, err := json.Marshal(p1Data)
 	if err != nil {
@@ -94,8 +101,10 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 	if bitlen != paillier.PrimeBits && bitlen != paillier.PrimeBits-1 {
 		return nil, fmt.Errorf("invalid paillier keys")
 	}
-	// todo: more check for paillier public key
-
+	nizkVerify := paillier.NIZKVerify(p1Data.PaiPubKey.N, p1Data.NIZKProof)
+	if !nizkVerify {
+		return nil, fmt.Errorf("paillier public key error")
+	}
 	// P2 additional save key information
 	p2SaveData := &P2SaveData{
 		From:      from,

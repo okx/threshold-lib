@@ -19,3 +19,13 @@ func TestPaillier(t *testing.T) {
 	fmt.Println(plain)
 
 }
+
+func TestNIZK(t *testing.T) {
+	privateKey, publicKey, _ := NewKeyPair(8)
+
+	proof, _ := NIZKProof(privateKey.N, privateKey.Phi)
+	fmt.Println(proof)
+
+	verify := NIZKVerify(publicKey.N, proof)
+	fmt.Println(verify)
+}

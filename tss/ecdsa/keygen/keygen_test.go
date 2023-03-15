@@ -41,14 +41,14 @@ func TestKeyGen(t *testing.T) {
 
 	fmt.Println("=========2/2 keygen==========")
 	// 1-->2   1--->3
-	_, paiPublicKey, _ := paillier.NewKeyPair(8)
-	p1Data, _ := P1(p1SaveData.ShareI, paiPublicKey, setUp1.DeviceNumber, setUp2.DeviceNumber)
+	paiPriKey, _, _ := paillier.NewKeyPair(8)
+	p1Data, _ := P1(p1SaveData.ShareI, paiPriKey, setUp1.DeviceNumber, setUp2.DeviceNumber)
 	fmt.Println("p1Data", p1Data)
 	publicKey, _ := curves.NewECPoint(curve, p2SaveData.PublicKey.X, p2SaveData.PublicKey.Y)
 	p2Data, _ := P2(p2SaveData.ShareI, publicKey, p1Data, setUp1.DeviceNumber, setUp2.DeviceNumber)
 	fmt.Println("p2Data", p2Data)
 
-	p1Data, _ = P1(p1SaveData.ShareI, paiPublicKey, setUp1.DeviceNumber, setUp3.DeviceNumber)
+	p1Data, _ = P1(p1SaveData.ShareI, paiPriKey, setUp1.DeviceNumber, setUp3.DeviceNumber)
 	fmt.Println("p1Data", p1Data)
 	p2Data, _ = P2(p3SaveData.ShareI, publicKey, p1Data, setUp1.DeviceNumber, setUp3.DeviceNumber)
 	fmt.Println("p2Data", p2Data)
