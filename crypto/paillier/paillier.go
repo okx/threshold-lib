@@ -20,6 +20,7 @@ type (
 	PrivateKey struct {
 		PublicKey
 		Lambda *big.Int // lcm(p-1, q-1)
+		Phi    *big.Int // (p-1) * (q-1)
 	}
 )
 
@@ -61,7 +62,7 @@ func NewKeyPair(concurrency ...int) (*PrivateKey, *PublicKey, error) {
 	lambda := new(big.Int).Div(phi, gcd)
 
 	publicKey := &PublicKey{N: n}
-	privateKey := &PrivateKey{PublicKey: *publicKey, Lambda: lambda}
+	privateKey := &PrivateKey{PublicKey: *publicKey, Lambda: lambda, Phi: phi}
 	return privateKey, publicKey, nil
 }
 
