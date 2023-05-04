@@ -3,12 +3,13 @@ package bip32
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/decred/dcrd/dcrec/edwards/v2"
-	"github.com/okx/threshold-lib/crypto"
-	"github.com/okx/threshold-lib/crypto/curves"
 	"math/big"
 	"testing"
+
+	"github.com/decred/dcrd/dcrec/edwards/v2"
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
+	"github.com/okx/threshold-lib/crypto"
+	"github.com/okx/threshold-lib/crypto/curves"
 )
 
 func TestTssKey(t *testing.T) {
@@ -30,7 +31,7 @@ func TestTssKey(t *testing.T) {
 }
 
 func TestTssKey_cmp(t *testing.T) {
-	curve := btcec.S256()
+	curve := secp256k1.S256()
 	x := crypto.RandomNum(curve.N)
 	X := curves.ScalarToPoint(curve, x)
 	chaincode := hex.EncodeToString([]byte("chaincode"))

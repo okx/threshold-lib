@@ -2,13 +2,14 @@ package vss
 
 import (
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
 	"math/big"
 	"testing"
+
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 )
 
 func TestPoly(t *testing.T) {
-	ec := btcec.S256()
+	ec := secp256k1.S256()
 
 	secret := big.NewInt(int64(1))
 	polynomial := InitPolynomial(ec, secret, 5)
@@ -20,7 +21,7 @@ func TestPoly(t *testing.T) {
 }
 
 func TestLagrangian(t *testing.T) {
-	ec := btcec.S256()
+	ec := secp256k1.S256()
 	degree := 5
 	secret := big.NewInt(int64(123456))
 	polynomial := InitPolynomial(ec, secret, degree)
@@ -36,7 +37,7 @@ func TestLagrangian(t *testing.T) {
 }
 
 func TestFeldman(t *testing.T) {
-	curve := btcec.S256()
+	curve := secp256k1.S256()
 	secret := big.NewInt(int64(123456))
 
 	feldman, _ := NewFeldman(2, 3, curve)

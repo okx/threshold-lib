@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/decred/dcrd/dcrec/edwards/v2"
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 )
 
 type ECPoint struct {
@@ -99,7 +99,7 @@ func (p *ECPoint) UnmarshalJSON(payload []byte) error {
 }
 
 func (p *ECPoint) PointToEcdsaPubKey() string {
-	publicKey := btcec.PublicKey{Curve: p.Curve, X: p.X, Y: p.Y}
+	publicKey := secp256k1.PublicKey{Curve: p.Curve, X: p.X, Y: p.Y}
 	return hex.EncodeToString(publicKey.SerializeCompressed())
 }
 
@@ -113,7 +113,7 @@ func EcdsaPubKeyToPoint(pubkeyStr string) (*ECPoint, error) {
 	if err != nil {
 		return &ECPoint{}, err
 	}
-	publicKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+	publicKey, err := secp256k1.ParsePubKey(pubKeyBytes)
 	if err != nil {
 		return &ECPoint{}, err
 	}

@@ -5,17 +5,19 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"math/big"
+
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
-	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
+	"testing"
+
 	"github.com/okx/threshold-lib/tss"
 	"github.com/okx/threshold-lib/tss/ecdsa/keygen"
 	"github.com/okx/threshold-lib/tss/key/bip32"
 	"github.com/okx/threshold-lib/tss/key/dkg"
-	"testing"
 )
 
 func TestTwoSign(t *testing.T) {
@@ -25,7 +27,7 @@ func TestTwoSign(t *testing.T) {
 
 	x1 := crypto.RandomNum(N)
 	x2 := crypto.RandomNum(N)
-	_, publicKey := btcec.PrivKeyFromBytes(curve, new(big.Int).Add(x1, x2).Bytes())
+	_, publicKey := secp256k1.PrivKeyFromBytes(new(big.Int).Add(x1, x2).Bytes())
 
 	paiPri, paiPub, _ := paillier.NewKeyPair(8)
 

@@ -2,9 +2,10 @@ package curves
 
 import (
 	"crypto/elliptic"
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"reflect"
+
+	"github.com/decred/dcrd/dcrec/edwards/v2"
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 )
 
 const (
@@ -17,7 +18,7 @@ var curveMap map[string]elliptic.Curve
 // only support ecdsa、ed25519
 func init() {
 	curveMap = map[string]elliptic.Curve{
-		Secp256k1: btcec.S256(),
+		Secp256k1: secp256k1.S256(),
 		Ed25519:   edwards.Edwards(),
 	}
 }
