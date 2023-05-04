@@ -2,16 +2,17 @@ package schnorr
 
 import (
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
+	"testing"
+
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/curves"
-	"testing"
 )
 
 func TestProof(t *testing.T) {
-	q := btcec.S256().N
+	q := secp256k1.S256().N
 	x := crypto.RandomNum(q)
-	X := curves.ScalarToPoint(btcec.S256(), x)
+	X := curves.ScalarToPoint(secp256k1.S256(), x)
 	proof, _ := Prove(x, X)
 
 	res := Verify(proof, X)

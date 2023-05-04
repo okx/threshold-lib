@@ -3,17 +3,18 @@ package keygen
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
+	"math/big"
+
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
 	"github.com/okx/threshold-lib/crypto/schnorr"
 	"github.com/okx/threshold-lib/crypto/vss"
 	"github.com/okx/threshold-lib/tss"
-	"math/big"
 )
 
 var (
-	curve = btcec.S256()
+	curve = secp256k1.S256()
 )
 
 type P1Data struct {
