@@ -67,16 +67,16 @@ func NewKeyPair(concurrency ...int) (*PrivateKey, *PublicKey, error) {
 }
 
 // Encrypt E(m) =  (g^m) * (r^n) mod n^2
-func (pk *PublicKey) Encrypt(m *big.Int) (*big.Int, error) {
+func (pk *PublicKey) Encrypt(m *big.Int) (*big.Int, *big.Int, error) {
 	r, err := getRandom(pk.N)
 	if err != nil {
-		return nil, fmt.Errorf("getRandom error")
+		return nil, nil, fmt.Errorf("getRandom error")
 	}
 	c, err := pk.EncryptWithR(m, r)
 	if err != nil {
-		return nil, fmt.Errorf("EncryptRandom error")
+		return nil, nil, fmt.Errorf("EncryptRandom error")
 	}
-	return c, err
+	return c, r, err
 }
 
 // EncryptWithR E(m) =  (g^m) * (r^n) mod n^2
