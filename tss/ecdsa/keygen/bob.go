@@ -3,66 +3,14 @@ package keygen
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
 	"github.com/okx/threshold-lib/crypto/schnorr"
 	"github.com/okx/threshold-lib/crypto/vss"
+	"github.com/okx/threshold-lib/crypto/zkp"
 	"github.com/okx/threshold-lib/tss"
 	"math/big"
 )
-
-var (
-	curve = btcec.S256()
-)
-
-type P1Data struct {
-	E_x1      *big.Int // paillier encrypt x1
-	Proof     *schnorr.Proof
-	PaiPubKey *paillier.PublicKey // paillier public key
-	X1        *curves.ECPoint
-	NIZKProof []string
-}
-
-// P1 after dkg, prepare for 2-party signature, P1 send encrypt x1 to P2
-// paillier key pair generation is time-consuming, generated in advance, encrypted storage?
-func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int) (*tss.Message, error) {
-	// lagrangian interpolation x1
-	x1 := vss.CalLagrangian(curve, big.NewInt(int64(from)), share1, []*big.Int{big.NewInt(int64(from)), big.NewInt(int64(to))})
-	paiPubKey := &paiPriKey.PublicKey
-	// paillier encrypt x1
-	E_x1, err := paiPubKey.Encrypt(x1)
-	if err != nil {
-		return nil, err
-	}
-	// schnorr prove x1
-	X1 := curves.ScalarToPoint(curve, x1)
-	proof, err := schnorr.Prove(x1, X1)
-	if err != nil {
-		return nil, err
-	}
-	nizkProof, err := paillier.NIZKProof(paiPriKey.N, paiPriKey.Phi)
-	if err != nil {
-		return nil, err
-	}
-	p1Data := P1Data{
-		E_x1:      E_x1,
-		Proof:     proof,
-		PaiPubKey: paiPubKey,
-		X1:        X1,
-		NIZKProof: nizkProof,
-	}
-	bytes, err := json.Marshal(p1Data)
-	if err != nil {
-		return nil, err
-	}
-	message := &tss.Message{
-		From: from,
-		To:   to,
-		Data: string(bytes),
-	}
-	return message, nil
-}
 
 type P2SaveData struct {
 	From      int
@@ -77,8 +25,8 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 	if msg.From != from || msg.To != to {
 		return nil, fmt.Errorf("message mismatch")
 	}
-	p1Data := P1Data{}
-	err := json.Unmarshal([]byte(msg.Data), &p1Data)
+	p1Data := &P1Data{}
+	err := json.Unmarshal([]byte(msg.Data), p1Data)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +53,33 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 	if !nizkVerify {
 		return nil, fmt.Errorf("paillier public key error")
 	}
+
+	h1i, h2i, NTildei := p1Data.StatementParams.H1, p1Data.StatementParams.H2, p1Data.StatementParams.NTilde
+	// zkp DlnProof verify
+	ok := p1Data.DlnProof1.Verify(h1i, h2i, NTildei)
+	if !ok {
+		return nil, fmt.Errorf("DlnProof1 verify fail")
+	}
+	ok = p1Data.DlnProof2.Verify(h2i, h1i, NTildei)
+	if !ok {
+		return nil, fmt.Errorf("DlnProof2 verify fail")
+	}
+
+	// PDLwSlackVerify
+	pdlWSlackStatement := &zkp.PDLwSlackStatement{
+		N:          p1Data.PaiPubKey.N,
+		CipherText: p1Data.E_x1,
+		Q:          p1Data.X1,
+		G:          G,
+		H1:         h1i,
+		H2:         h2i,
+		NTilde:     NTildei,
+	}
+	slackVerify := zkp.PDLwSlackVerify(p1Data.PDLwSlackProof, pdlWSlackStatement)
+	if !slackVerify {
+		return nil, fmt.Errorf("PDLwSlackVerify fail")
+	}
+
 	// P2 additional save key information
 	p2SaveData := &P2SaveData{
 		From:      from,

@@ -2,13 +2,14 @@ package dkg
 
 import (
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/okx/threshold-lib/tss"
 	"testing"
+
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
+	"github.com/okx/threshold-lib/tss"
 )
 
 func TestKeyGen(t *testing.T) {
-	curve := btcec.S256() // edwards.Edwards()
+	curve := secp256k1.S256() // edwards.Edwards()
 	setUp1 := NewSetUp(1, 3, curve)
 	setUp2 := NewSetUp(2, 3, curve)
 	setUp3 := NewSetUp(3, 3, curve)

@@ -4,14 +4,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/decred/dcrd/dcrec/edwards/v2"
-	"github.com/okx/threshold-lib/crypto"
 	"testing"
+
+	"github.com/decred/dcrd/dcrec/edwards/v2"
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
+	"github.com/okx/threshold-lib/crypto"
 )
 
 func TestCurve(t *testing.T) {
-	curve := btcec.S256()
+	curve := secp256k1.S256()
 	x := crypto.RandomNum(curve.N)
 	point := ScalarToPoint(curve, x)
 	fmt.Println(point)
@@ -30,11 +31,11 @@ func TestCurve(t *testing.T) {
 }
 
 func TestPointToPubKey(t *testing.T) {
-	curve := btcec.S256()
+	curve := secp256k1.S256()
 	x := crypto.RandomNum(curve.N)
 	fmt.Println("private key: ", hex.EncodeToString(x.Bytes()))
 	point := ScalarToPoint(curve, x)
-	publicKey := btcec.PublicKey{Curve: point.Curve, X: point.X, Y: point.Y}
+	publicKey := secp256k1.PublicKey{Curve: point.Curve, X: point.X, Y: point.Y}
 	fmt.Println("ecdsa publicKey: ", hex.EncodeToString(publicKey.SerializeCompressed()))
 
 	curve2 := edwards.Edwards()

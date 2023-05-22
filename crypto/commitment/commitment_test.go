@@ -2,14 +2,15 @@ package commitment
 
 import (
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/okx/threshold-lib/crypto"
 	"testing"
+
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
+	"github.com/okx/threshold-lib/crypto"
 )
 
 func TestCommit(t *testing.T) {
-	x := crypto.RandomNum(btcec.S256().N)
-	_, publicKey := btcec.PrivKeyFromBytes(btcec.S256(), x.Bytes())
+	x := crypto.RandomNum(secp256k1.S256().N)
+	_, publicKey := secp256k1.PrivKeyFromBytes(x.Bytes())
 
 	cmt := NewCommitment(publicKey.X, publicKey.Y)
 	fmt.Println(cmt)
