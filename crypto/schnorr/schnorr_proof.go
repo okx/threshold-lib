@@ -1,7 +1,7 @@
 package schnorr
 
 import (
-	"errors"
+	"fmt"
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"math/big"
@@ -15,7 +15,7 @@ type Proof struct {
 // Prove schnorr s = r + hx
 func Prove(x *big.Int, X *curves.ECPoint) (*Proof, error) {
 	if x == nil || X == nil {
-		return nil, errors.New("schnorr proves parameters error")
+		return nil, fmt.Errorf("schnorr prove parameters error")
 	}
 	q := X.Curve.Params().N
 

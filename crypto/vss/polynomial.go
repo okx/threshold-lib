@@ -18,8 +18,8 @@ type Share struct {
 }
 
 // InitPolynomial init Coefficients [a0, a1....at] t=degree
-func InitPolynomial(c elliptic.Curve, secret *big.Int, degree int) *Polynomial {
-	q := c.Params().N
+func InitPolynomial(curve elliptic.Curve, secret *big.Int, degree int) *Polynomial {
+	q := curve.Params().N
 	Coefficients := make([]*big.Int, degree+1)
 	Coefficients[0] = secret
 	for i := 1; i <= degree; i++ {

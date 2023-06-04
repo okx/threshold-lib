@@ -49,6 +49,21 @@ func RandomNum(n *big.Int) *big.Int {
 	}
 }
 
+// RandomPrimeNum  `r < n` and `gcd(r,n) = 1`
+func RandomPrimeNum(n *big.Int) (*big.Int, error) {
+	gcd := new(big.Int)
+	r := new(big.Int)
+	var err error
+	for gcd.Cmp(one) != 0 {
+		r, err = rand.Int(rand.Reader, n)
+		if err != nil {
+			return nil, err
+		}
+		gcd = new(big.Int).GCD(nil, nil, r, n)
+	}
+	return r, nil
+}
+
 // GenerateSafePrime generates a prime number `p`; a prime 'p' such that 2p+1 is also prime.
 func GenerateSafePrime(bits int, values chan *big.Int, quit chan int) (p *big.Int, err error) {
 	for {

@@ -3,10 +3,8 @@ package keygen
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
-	"github.com/okx/threshold-lib/crypto/zkp"
 	"github.com/okx/threshold-lib/tss"
 	"github.com/okx/threshold-lib/tss/key/bip32"
 	"github.com/okx/threshold-lib/tss/key/dkg"
@@ -74,48 +72,4 @@ func TestKeyGen(t *testing.T) {
 	tssKey, _ = tssKey.NewChildKey(996)
 	fmt.Println(tssKey.PublicKey())
 
-}
-
-func TestZkProof(t *testing.T) {
-	preParams, _ := GeneratePreParams()
-	_, paiPub, _ := paillier.NewKeyPair(8)
-
-	h1i, h2i, alpha, beta, p, q, NTildei :=
-		preParams.H1i,
-		preParams.H2i,
-		preParams.Alpha,
-		preParams.Beta,
-		preParams.P,
-		preParams.Q,
-		preParams.NTildei
-
-	dlnProof1 := zkp.NewDlnProof(h1i, h2i, alpha, p, q, NTildei)
-	dlnProof2 := zkp.NewDlnProof(h2i, h1i, beta, p, q, NTildei)
-
-	verify := dlnProof1.Verify(h1i, h2i, NTildei)
-	fmt.Println(verify)
-	verify = dlnProof2.Verify(h2i, h1i, NTildei)
-	fmt.Println(verify)
-
-	x := crypto.RandomNum(curve.N)
-	X := curves.ScalarToPoint(curve, x)
-	Ex, r, _ := paiPub.Encrypt(x)
-
-	pdlWSlackWitness := &zkp.PDLwSlackWitness{
-		X: x,
-		R: r,
-	}
-	pdlWSlackStatement := &zkp.PDLwSlackStatement{
-		N:          paiPub.N,
-		CipherText: Ex,
-		Q:          X,
-		G:          G,
-		H1:         h1i,
-		H2:         h2i,
-		NTilde:     NTildei,
-	}
-	pdlWSlackPf, _ := zkp.NewPDLwSlackProof(pdlWSlackWitness, pdlWSlackStatement)
-
-	verify = zkp.PDLwSlackVerify(pdlWSlackPf, pdlWSlackStatement)
-	fmt.Println(verify)
 }

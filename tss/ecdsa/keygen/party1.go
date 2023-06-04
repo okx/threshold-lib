@@ -2,6 +2,7 @@ package keygen
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/zkp"
 	"math/big"
@@ -76,6 +77,7 @@ type P1Data struct {
 	DlnProof2       *zkp.DlnProof
 	PDLwSlackProof  *zkp.PDLwSlackProof
 	StatementParams *zkp.StatementParams
+	RangeProof      *zkp.RangeProof
 }
 
 // P1 after dkg, prepare for 2-party signature, P1 send encrypt x1 to P2
@@ -115,8 +117,8 @@ func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams
 		preParams.Q,
 		preParams.NTildei
 	// zkp DlnProof
-	dlnProof1 := zkp.NewDlnProof(h1i, h2i, alpha, p, q, NTildei)
-	dlnProof2 := zkp.NewDlnProof(h2i, h1i, beta, p, q, NTildei)
+	dlnProof1 := zkp.NewDlnProve(h1i, h2i, alpha, p, q, NTildei)
+	dlnProof2 := zkp.NewDlnProve(h2i, h1i, beta, p, q, NTildei)
 
 	// PDLwSlackStatement
 	pdlWSlackWitness := &zkp.PDLwSlackWitness{
@@ -132,7 +134,15 @@ func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams
 		H2:         h2i,
 		NTilde:     NTildei,
 	}
-	pdlWSlackPf, statementParams := zkp.NewPDLwSlackProof(pdlWSlackWitness, pdlWSlackStatement)
+	pdlWSlackPf, statementParams := zkp.NewPDLwSlackProve(pdlWSlackWitness, pdlWSlackStatement)
+	if pdlWSlackPf == nil || statementParams == nil {
+		return nil, fmt.Errorf("PDLwSlack proof fail")
+	}
+	// range proof
+	rangeProof, err := zkp.RangeProve(paiPubKey, NTildei, h1i, h2i, E_x1, r, x1)
+	if err != nil {
+		return nil, err
+	}
 
 	p1Data := P1Data{
 		E_x1:            E_x1,
@@ -144,6 +154,7 @@ func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams
 		DlnProof2:       dlnProof2,
 		PDLwSlackProof:  pdlWSlackPf,
 		StatementParams: statementParams,
+		RangeProof:      rangeProof,
 	}
 	bytes, err := json.Marshal(p1Data)
 	if err != nil {
