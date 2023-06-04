@@ -1,7 +1,6 @@
 package paillier
 
 import (
-	"crypto/rand"
 	"fmt"
 	"github.com/okx/threshold-lib/crypto"
 	"math/big"
@@ -68,7 +67,7 @@ func NewKeyPair(concurrency ...int) (*PrivateKey, *PublicKey, error) {
 
 // Encrypt E(m) =  (g^m) * (r^n) mod n^2
 func (pk *PublicKey) Encrypt(m *big.Int) (*big.Int, *big.Int, error) {
-	r, err := getRandom(pk.N)
+	r, err := crypto.RandomPrimeNum(pk.N)
 	if err != nil {
 		return nil, nil, fmt.Errorf("getRandom error")
 	}
@@ -84,9 +83,9 @@ func (pk *PublicKey) EncryptWithR(m, r *big.Int) (c *big.Int, err error) {
 	if m.Cmp(zero) == -1 || m.Cmp(pk.N) != -1 { // 0 <=  m < N
 		return nil, fmt.Errorf("m range error")
 	}
-	N2 := pk.n2()
+	N2 := pk.N2()
 	// g^m mod N2
-	Gm := new(big.Int).Exp(pk.g(), m, N2)
+	Gm := new(big.Int).Exp(pk.G(), m, N2)
 	// r^n mod N2
 	xN := new(big.Int).Exp(r, pk.N, N2)
 	//  (g^m) * (r^n) mod N2
@@ -99,7 +98,7 @@ func (pk *PublicKey) HomoMulPlain(c1, m *big.Int) (*big.Int, error) {
 	if m.Cmp(zero) == -1 || m.Cmp(pk.N) != -1 { // 0 <=  m < N
 		return nil, fmt.Errorf("m range error")
 	}
-	N2 := pk.n2()
+	N2 := pk.N2()
 	if c1.Cmp(zero) == -1 || c1.Cmp(N2) != -1 { //  // 0 <= c1 < N2
 		return nil, fmt.Errorf("c range error")
 	}
@@ -109,7 +108,7 @@ func (pk *PublicKey) HomoMulPlain(c1, m *big.Int) (*big.Int, error) {
 
 // HomoAdd E(ab)=E(a)*E(b) mod n^2
 func (pk *PublicKey) HomoAdd(c1, c2 *big.Int) (*big.Int, error) {
-	N2 := pk.n2()
+	N2 := pk.N2()
 	if c1.Cmp(zero) == -1 || c1.Cmp(N2) != -1 { //  // 0 <= c1 < N2
 		return nil, fmt.Errorf("c1 range error")
 	}
@@ -123,7 +122,7 @@ func (pk *PublicKey) HomoAdd(c1, c2 *big.Int) (*big.Int, error) {
 // HomoAddPlain   E(a+b) = E(a) * g^b mod n^2
 //						 = E(a) * (1 + b*n) mod n^2
 func (pk *PublicKey) HomoAddPlain(eA, b *big.Int) (*big.Int, error) {
-	N2 := pk.n2()
+	N2 := pk.N2()
 	if eA.Cmp(zero) == -1 || eA.Cmp(N2) != -1 { //  // 0 <= eA < N2
 		return nil, fmt.Errorf("eA range error")
 	}
@@ -135,18 +134,18 @@ func (pk *PublicKey) HomoAddPlain(eA, b *big.Int) (*big.Int, error) {
 }
 
 // n*n
-func (pk *PublicKey) n2() *big.Int {
+func (pk *PublicKey) N2() *big.Int {
 	return new(big.Int).Mul(pk.N, pk.N)
 }
 
 // g = n + 1
-func (pk *PublicKey) g() *big.Int {
+func (pk *PublicKey) G() *big.Int {
 	return new(big.Int).Add(pk.N, one)
 }
 
 // Decrypt m = L(c^lambda mod n^2) * mu mod n
 func (priv *PrivateKey) Decrypt(c *big.Int) (m *big.Int, err error) {
-	N2 := priv.n2()
+	N2 := priv.N2()
 	if c.Cmp(zero) == -1 || c.Cmp(N2) != -1 { // 0 <= c < N2
 		return nil, fmt.Errorf("c range error")
 	}
@@ -157,7 +156,7 @@ func (priv *PrivateKey) Decrypt(c *big.Int) (m *big.Int, err error) {
 	//  lc = L[(c^Lambda mod N2) / N]
 	lc := l(new(big.Int).Exp(c, priv.Lambda, N2), priv.N)
 	// lg = L[(g^Lambda mod N2) / N]
-	lg := l(new(big.Int).Exp(priv.g(), priv.Lambda, N2), priv.N)
+	lg := l(new(big.Int).Exp(priv.G(), priv.Lambda, N2), priv.N)
 	// m = (lc/lg) mod N
 	inv := new(big.Int).ModInverse(lg, priv.N)
 	m = new(big.Int).Mod(new(big.Int).Mul(lc, inv), priv.N)
@@ -168,19 +167,4 @@ func (priv *PrivateKey) Decrypt(c *big.Int) (m *big.Int, err error) {
 func l(u, N *big.Int) *big.Int {
 	t := new(big.Int).Sub(u, one)
 	return new(big.Int).Div(t, N)
-}
-
-// getRandom  `r < n` and `gcd(r,n) = 1`
-func getRandom(n *big.Int) (*big.Int, error) {
-	gcd := new(big.Int)
-	r := new(big.Int)
-	var err error
-	for gcd.Cmp(one) != 0 {
-		r, err = rand.Int(rand.Reader, n)
-		if err != nil {
-			return nil, err
-		}
-		gcd = new(big.Int).GCD(nil, nil, r, n)
-	}
-	return r, nil
 }

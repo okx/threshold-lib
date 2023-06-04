@@ -56,11 +56,11 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 
 	h1i, h2i, NTildei := p1Data.StatementParams.H1, p1Data.StatementParams.H2, p1Data.StatementParams.NTilde
 	// zkp DlnProof verify
-	ok := p1Data.DlnProof1.Verify(h1i, h2i, NTildei)
+	ok := zkp.DlnVerify(p1Data.DlnProof1, h1i, h2i, NTildei)
 	if !ok {
 		return nil, fmt.Errorf("DlnProof1 verify fail")
 	}
-	ok = p1Data.DlnProof2.Verify(h2i, h1i, NTildei)
+	ok = zkp.DlnVerify(p1Data.DlnProof2, h2i, h1i, NTildei)
 	if !ok {
 		return nil, fmt.Errorf("DlnProof2 verify fail")
 	}
@@ -79,7 +79,11 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 	if !slackVerify {
 		return nil, fmt.Errorf("PDLwSlackVerify fail")
 	}
-
+	// RangeProof
+	rangeVerify := zkp.RangeVerify(p1Data.RangeProof, p1Data.PaiPubKey, NTildei, h1i, h2i, p1Data.E_x1)
+	if !rangeVerify {
+		return nil, fmt.Errorf("RangeVerify fail")
+	}
 	// P2 additional save key information
 	p2SaveData := &P2SaveData{
 		From:      from,

@@ -20,7 +20,7 @@ func NewFeldman(threshold, limit int, curve elliptic.Curve) (*Feldman, error) {
 		return nil, fmt.Errorf("threshold least than 2")
 	}
 	if limit < threshold {
-		return nil, fmt.Errorf("error, limit less than threshold")
+		return nil, fmt.Errorf("NewFeldman error, limit less than threshold")
 	}
 	return &Feldman{threshold, limit, curve}, nil
 }
@@ -42,7 +42,7 @@ func (fm *Feldman) Evaluate(secret *big.Int) ([]*curves.ECPoint, []*Share, error
 // Verify check feldman verifiable secret sharing
 func (fm *Feldman) Verify(share *Share, verifiers []*curves.ECPoint) (bool, error) {
 	if len(verifiers) < fm.threshold {
-		return false, fmt.Errorf("verifiers number error")
+		return false, fmt.Errorf("feldman verify number error")
 	}
 	lhs := curves.ScalarToPoint(fm.curve, share.Y)
 

@@ -22,7 +22,8 @@ func TestEd25519(t *testing.T) {
 		p3Data = bip32Tss(p3Data)
 
 		hash := sha256.New()
-		message := hash.Sum([]byte("hello"))
+		hash.Write([]byte("hello"))
+		message := hash.Sum(nil)
 		publicKey := edwards.NewPublicKey(p1Data.PublicKey.X, p1Data.PublicKey.Y)
 
 		sign_p1_p2(p1Data, p2Data, publicKey, message)

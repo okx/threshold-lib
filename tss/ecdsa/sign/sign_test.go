@@ -28,7 +28,8 @@ const (
 func TestTwoSign(t *testing.T) {
 	N := curve.N
 	hash := sha256.New()
-	message := hash.Sum([]byte("hello"))
+	hash.Write([]byte("hello"))
+	message := hash.Sum(nil)
 
 	x1 := crypto.RandomNum(N)
 	x2 := crypto.RandomNum(N)
@@ -75,7 +76,8 @@ func TestEcdsaSign(t *testing.T) {
 
 	fmt.Println("=========2/2 sign==========")
 	hash := sha256.New()
-	message := hash.Sum([]byte("hello"))
+	hash.Write([]byte("hello"))
+	message := hash.Sum(nil)
 
 	p1 := NewP1(pubKey, hex.EncodeToString(message), paiPrivate)
 	p2 := NewP2(x2, p2SaveData.E_x1, pubKey, p2SaveData.PaiPubKey, hex.EncodeToString(message))
@@ -115,8 +117,5 @@ func KeyGen() (*tss.KeyStep3Data, *tss.KeyStep3Data, *tss.KeyStep3Data) {
 	p2SaveData, _ := setUp2.DKGStep3(msgs2_3_in)
 	p3SaveData, _ := setUp3.DKGStep3(msgs3_3_in)
 
-	fmt.Println("setUp1", p1SaveData, p1SaveData.PublicKey)
-	fmt.Println("setUp2", p2SaveData, p2SaveData.PublicKey)
-	fmt.Println("setUp3", p3SaveData, p3SaveData.PublicKey)
 	return p1SaveData, p2SaveData, p3SaveData
 }
