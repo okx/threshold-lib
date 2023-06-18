@@ -12,6 +12,7 @@ import (
 
 var label = []byte("Key share derivation:\n")
 
+// support secp256k1 derived, not support ed25519
 type TssKey struct {
 	shareI       *big.Int        // key share
 	publicKey    *curves.ECPoint // publicKey

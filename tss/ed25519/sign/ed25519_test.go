@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"github.com/okx/threshold-lib/tss"
-	"github.com/okx/threshold-lib/tss/key/bip32"
 	"github.com/okx/threshold-lib/tss/key/dkg"
 	"math/big"
 	"testing"
@@ -16,10 +15,6 @@ import (
 func TestEd25519(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		p1Data, p2Data, p3Data := keyGen(curve)
-
-		p1Data = bip32Tss(p1Data)
-		p2Data = bip32Tss(p2Data)
-		p3Data = bip32Tss(p3Data)
 
 		hash := sha256.New()
 		hash.Write([]byte("hello"))
@@ -30,18 +25,6 @@ func TestEd25519(t *testing.T) {
 		sign_p1_p3(p1Data, p3Data, publicKey, message)
 		sign_p2_p3(p2Data, p3Data, publicKey, message)
 	}
-}
-
-// private key share derivation
-func bip32Tss(pData *tss.KeyStep3Data) *tss.KeyStep3Data {
-	tssKey, _ := bip32.NewTssKey(pData.ShareI, pData.PublicKey, pData.ChainCode)
-	tssKey, _ = tssKey.NewChildKey(0)
-	tssKey, _ = tssKey.NewChildKey(0)
-	tssKey, _ = tssKey.NewChildKey(0)
-
-	pData.ShareI = tssKey.ShareI()
-	pData.PublicKey = tssKey.PublicKey()
-	return pData
 }
 
 func sign_p1_p2(p1Data, p2Data *tss.KeyStep3Data, publicKey *edwards.PublicKey, message []byte) {
