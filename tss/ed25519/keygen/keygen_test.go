@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"github.com/okx/threshold-lib/tss"
-	"github.com/okx/threshold-lib/tss/key/bip32"
 	"github.com/okx/threshold-lib/tss/key/dkg"
 	"testing"
 )
@@ -38,14 +37,5 @@ func TestKeyGen(t *testing.T) {
 	fmt.Println("setUp1", p1SaveData, p1SaveData.PublicKey)
 	fmt.Println("setUp2", p2SaveData, p2SaveData.PublicKey)
 	fmt.Println("setUp3", p3SaveData, p3SaveData.PublicKey)
-
-	fmt.Println("=========bip32==========")
-	tssKey, _ := bip32.NewTssKey(p1SaveData.ShareI, p1SaveData.PublicKey, p1SaveData.ChainCode)
-	tssKey, _ = tssKey.NewChildKey(996)
-	fmt.Println(tssKey.PublicKey())
-
-	tssKey, _ = bip32.NewTssKey(p2SaveData.ShareI, p2SaveData.PublicKey, p2SaveData.ChainCode)
-	tssKey, _ = tssKey.NewChildKey(996)
-	fmt.Println(tssKey.PublicKey())
 
 }
