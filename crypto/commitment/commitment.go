@@ -2,8 +2,9 @@ package commitment
 
 import (
 	"crypto/rand"
-	"github.com/okx/threshold-lib/crypto"
 	"math/big"
+
+	"github.com/okx/threshold-lib/crypto"
 )
 
 type (

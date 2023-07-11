@@ -2,9 +2,10 @@ package zkp
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/paillier"
-	"math/big"
 )
 
 type (

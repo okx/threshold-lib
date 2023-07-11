@@ -12,7 +12,7 @@ func TestPoly(t *testing.T) {
 	ec := secp256k1.S256()
 
 	secret := big.NewInt(int64(1))
-	polynomial := InitPolynomial(ec, secret, 5)
+	polynomial, _ := InitPolynomial(ec, secret, 5)
 	fmt.Println(polynomial.Coefficients)
 
 	x := big.NewInt(int64(1))
@@ -24,7 +24,7 @@ func TestLagrangian(t *testing.T) {
 	ec := secp256k1.S256()
 	degree := 5
 	secret := big.NewInt(int64(123456))
-	polynomial := InitPolynomial(ec, secret, degree)
+	polynomial, _ := InitPolynomial(ec, secret, degree)
 	fmt.Println(polynomial.Coefficients)
 
 	pointList := make([]*Share, degree+1)

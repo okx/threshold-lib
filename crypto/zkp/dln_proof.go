@@ -1,8 +1,9 @@
 package zkp
 
 import (
-	"github.com/okx/threshold-lib/crypto"
 	"math/big"
+
+	"github.com/okx/threshold-lib/crypto"
 )
 
 // Zero-knowledge proof of knowledge of the discrete logarithm over safe prime product
@@ -10,7 +11,7 @@ import (
 // A proof of knowledge of the discrete log of an element h2 = hx1 with respect to h1.
 // In our protocol, we will run two of these in parallel to prove that two elements h1,h2 generate the same group modN.
 
-const Iterations = 12
+const Iterations = 128
 
 type (
 	DlnProof struct {

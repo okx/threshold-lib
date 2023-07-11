@@ -10,7 +10,7 @@ import (
 // https://github.com/ZenGo-X/zk-paillier/blob/0c1b4cbfda1723d6938c4a447a6d9c7efe571693/src/zkproofs/correct_key_ni.rs
 
 // This protocol is based on the NIZK protocol in https://eprint.iacr.org/2018/057.pdf
-// for parameters = e = N, m2 = 11, alpha = 6370 see https://eprint.iacr.org/2018/987.pdf 6.2.3
+// for parameters = e = N, m2 = 11, alpha = 6370 see https://eprint.iacr.org/archive/2018/987/1539865653.pdf 6.2.3
 // for full details.
 const (
 	m2         = 11

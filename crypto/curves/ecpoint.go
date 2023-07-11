@@ -90,7 +90,12 @@ func (p *ECPoint) UnmarshalJSON(payload []byte) error {
 	}
 	p.X = aux.X
 	p.Y = aux.Y
-	p.Curve = GetCurveByName(aux.Curve)
+	curveName, ok := GetCurveByName(aux.Curve)
+	if !ok {
+		return fmt.Errorf("Curve type not supported")
+	} else {
+		p.Curve = curveName
+	}
 
 	if !p.IsOnCurve() {
 		return fmt.Errorf("UnmarshalJSON error, point not on the curves ")

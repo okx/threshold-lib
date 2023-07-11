@@ -2,9 +2,10 @@ package schnorr
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/curves"
-	"math/big"
 )
 
 type Proof struct {

@@ -1,17 +1,18 @@
 package zkp
 
 import (
+	"math/big"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/curves"
-	"math/big"
 )
 
 // partly ported from:
 // https://github.com/ZenGo-X/multi-party-ecdsa/blob/master/src/utilities/zk_pdl_with_slack/mod.rs
 
 // We use the proof as given in proof PIi in https://eprint.iacr.org/2016/013.pdf.
-// This proof ws taken from the proof 6.3 (left side ) in https://www.cs.unc.edu/~reiter/papers/2004/IJIS.pdf
+// This proof ws taken from the proof 6.3 (left side ) in https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.58.2603
 //
 // Statement: (c, pk, Q, G)
 // witness (x, r) such that Q = xG, c = Enc(pk, x, r)

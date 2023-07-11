@@ -3,11 +3,12 @@ package dkg
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/vss"
 	"github.com/okx/threshold-lib/tss"
-	"math/big"
 )
 
 // DKGStep1 p2p send verifiers commitment

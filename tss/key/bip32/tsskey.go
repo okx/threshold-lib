@@ -6,8 +6,9 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"github.com/okx/threshold-lib/crypto/curves"
 	"math/big"
+
+	"github.com/okx/threshold-lib/crypto/curves"
 )
 
 var label = []byte("Key share derivation:\n")
@@ -40,6 +41,9 @@ func NewTssKey(shareI *big.Int, publicKey *curves.ECPoint, chaincode string) (*T
 
 // NewChildKey like bip32 non-hardened derivation
 func (tssKey *TssKey) NewChildKey(childIdx uint32) (*TssKey, error) {
+	if childIdx >= 2147483648 { // 2^31
+		return nil, fmt.Errorf("hardened derivation is unsupported")
+	}
 	curve := tssKey.publicKey.Curve
 	intermediary, err := calPrivateOffset(tssKey.publicKey.X.Bytes(), tssKey.chaincode, childIdx)
 	if err != nil {
