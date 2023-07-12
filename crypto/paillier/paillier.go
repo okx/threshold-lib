@@ -2,9 +2,10 @@ package paillier
 
 import (
 	"fmt"
-	"github.com/okx/threshold-lib/crypto"
 	"math/big"
 	"runtime"
+
+	"github.com/okx/threshold-lib/crypto"
 )
 
 const (
@@ -37,10 +38,10 @@ func NewKeyPair(concurrency ...int) (*PrivateKey, *PublicKey, error) {
 		currency = runtime.NumCPU()
 	}
 
-	var values = make(chan *big.Int)
-	var quit = make(chan int)
+	var values = make(chan *big.Int, currency)
 	var p, q *big.Int
 	for p == q {
+		var quit = make(chan int)
 		for i := 0; i < currency; i++ {
 			go crypto.GenerateSafePrime(PrimeBits/2, values, quit)
 		}

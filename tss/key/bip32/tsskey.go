@@ -1,13 +1,16 @@
 package bip32
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"github.com/okx/threshold-lib/crypto/curves"
 	"math/big"
+
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
+	"github.com/okx/threshold-lib/crypto/curves"
 )
 
 var label = []byte("Key share derivation:\n")
@@ -40,11 +43,21 @@ func NewTssKey(shareI *big.Int, publicKey *curves.ECPoint, chaincode string) (*T
 
 // NewChildKey like bip32 non-hardened derivation
 func (tssKey *TssKey) NewChildKey(childIdx uint32) (*TssKey, error) {
+	if childIdx >= uint32(0x80000000) { // 2^31
+		return nil, fmt.Errorf("hardened derivation is unsupported")
+	}
 	curve := tssKey.publicKey.Curve
 	intermediary, err := calPrivateOffset(tssKey.publicKey.X.Bytes(), tssKey.chaincode, childIdx)
 	if err != nil {
 		return nil, err
 	}
+
+	// Validate key
+	err = validatePrivateKey(intermediary[:32])
+	if err != nil {
+		return nil, err
+	}
+
 	offset := new(big.Int).SetBytes(intermediary[:32])
 	point := curves.ScalarToPoint(curve, offset)
 	ecPoint, err := tssKey.publicKey.Add(point)
@@ -82,7 +95,7 @@ func (tssKey *TssKey) PublicKey() *curves.ECPoint {
 	return tssKey.publicKey
 }
 
-// calPrivateOffset sha512(label | chaincode | publicKey | childIdx)
+// calPrivateOffset HMAC-SHA512(label | chaincode | publicKey | childIdx)
 func calPrivateOffset(publicKey, chaincode []byte, childIdx uint32) ([]byte, error) {
 	hash := hmac.New(sha512.New, label)
 	var data []byte
@@ -94,6 +107,15 @@ func calPrivateOffset(publicKey, chaincode []byte, childIdx uint32) ([]byte, err
 		return nil, err
 	}
 	return hash.Sum(nil), nil
+}
+
+func validatePrivateKey(key []byte) error {
+	if fmt.Sprintf("%x", key) == "0000000000000000000000000000000000000000000000000000000000000000" || //if the key is zero
+		bytes.Compare(key, secp256k1.S256().N.Bytes()) >= 0 || //or is outside of the curve
+		len(key) != 32 { //or is too short
+		return fmt.Errorf("Invalid private key")
+	}
+	return nil
 }
 
 func uint32Bytes(i uint32) []byte {

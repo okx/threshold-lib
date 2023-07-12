@@ -3,13 +3,14 @@ package keygen
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
 	"github.com/okx/threshold-lib/crypto/schnorr"
 	"github.com/okx/threshold-lib/crypto/vss"
 	"github.com/okx/threshold-lib/crypto/zkp"
 	"github.com/okx/threshold-lib/tss"
-	"math/big"
 )
 
 type P2SaveData struct {

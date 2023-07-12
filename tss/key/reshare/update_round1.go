@@ -3,11 +3,11 @@ package reshare
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/okx/threshold-lib/crypto/vss"
+	"math/big"
 
 	"github.com/okx/threshold-lib/crypto/commitment"
+	"github.com/okx/threshold-lib/crypto/vss"
 	"github.com/okx/threshold-lib/tss"
-	"math/big"
 )
 
 // DKGStep1
