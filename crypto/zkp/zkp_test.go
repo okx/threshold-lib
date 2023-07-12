@@ -2,21 +2,23 @@ package zkp
 
 import (
 	"fmt"
+	"math/big"
+	"testing"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
-	"math/big"
-	"testing"
 )
 
 func TestZkpProof(t *testing.T) {
 	// -----------------------GeneratePreParams-------------------------------
-	var values = make(chan *big.Int)
-	var quit = make(chan int)
+	concurrency := 4
+	var values = make(chan *big.Int, concurrency)
 	var Pi, Qi *big.Int
 	for Pi == Qi {
-		for i := 0; i < 4; i++ {
+		var quit = make(chan int)
+		for i := 0; i < concurrency; i++ {
 			go crypto.GenerateSafePrime(1024, values, quit)
 		}
 		Pi, Qi = <-values, <-values

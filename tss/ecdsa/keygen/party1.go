@@ -3,15 +3,15 @@ package keygen
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/okx/threshold-lib/crypto"
-	"github.com/okx/threshold-lib/crypto/zkp"
 	"math/big"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
+	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
 	"github.com/okx/threshold-lib/crypto/schnorr"
 	"github.com/okx/threshold-lib/crypto/vss"
+	"github.com/okx/threshold-lib/crypto/zkp"
 	"github.com/okx/threshold-lib/tss"
 )
 
@@ -29,11 +29,12 @@ type PreParams struct {
 
 // GeneratePreParams  recommend to pre-generate locally
 func GeneratePreParams() (*PreParams, error) {
-	var values = make(chan *big.Int)
-	var quit = make(chan int)
+	concurrency := 4
+	var values = make(chan *big.Int, concurrency)
 	var Pi, Qi *big.Int
 	for Pi == Qi {
-		for i := 0; i < 4; i++ {
+		var quit = make(chan int)
+		for i := 0; i < concurrency; i++ {
 			go crypto.GenerateSafePrime(1024, values, quit)
 		}
 		Pi, Qi = <-values, <-values

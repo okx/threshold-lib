@@ -1,11 +1,12 @@
 package tss
 
 import (
+	"math/big"
+
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/schnorr"
 	"github.com/okx/threshold-lib/crypto/vss"
-	"math/big"
 )
 
 type Message struct {

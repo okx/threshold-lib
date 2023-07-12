@@ -1,10 +1,11 @@
 package sign
 
 import (
+	"math/big"
+
 	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/vss"
-	"math/big"
 )
 
 var (

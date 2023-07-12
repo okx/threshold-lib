@@ -23,8 +23,9 @@ func init() {
 	}
 }
 
-func GetCurveByName(curveName string) elliptic.Curve {
-	return curveMap[curveName]
+func GetCurveByName(curveName string) (elliptic.Curve, bool) {
+	val, ok := curveMap[curveName]
+	return val, ok
 }
 
 func GetCurveName(curve elliptic.Curve) string {

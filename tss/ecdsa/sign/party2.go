@@ -4,12 +4,13 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"math/big"
+
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
 	"github.com/okx/threshold-lib/crypto/schnorr"
-	"math/big"
 )
 
 type P2Context struct {
@@ -38,6 +39,10 @@ func NewP2(bobPri, E_x1 *big.Int, publicKey *ecdsa.PublicKey, paiPub *paillier.P
 }
 
 func (p2 *P2Context) Step1(cmtC *commitment.Commitment) (*schnorr.Proof, *curves.ECPoint, error) {
+	_, err := hex.DecodeString(p2.message)
+	if err != nil {
+		return nil, nil, err
+	}
 	p2.cmtC = cmtC
 	R2 := curves.ScalarToPoint(curve, p2.k2)
 	proof, err := schnorr.Prove(p2.k2, R2)

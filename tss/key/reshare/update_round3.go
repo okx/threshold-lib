@@ -3,13 +3,14 @@ package reshare
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/schnorr"
 	"github.com/okx/threshold-lib/crypto/vss"
 	"github.com/okx/threshold-lib/tss"
 	"github.com/okx/threshold-lib/tss/key/dkg"
-	"math/big"
 )
 
 // DKGStep3 return new key share information except chaincode
@@ -89,7 +90,7 @@ func (info *RefreshInfo) DKGStep3(msgs []*tss.Message) (*tss.KeyStep3Data, error
 	}
 
 	sharePubKeyMap := make(map[int]*curves.ECPoint, info.Threshold)
-	for k := 1; k <= (info.Threshold + 1); k++ {
+	for k := 1; k <= info.Total; k++ {
 		Yi := v[0]
 		tmp := big.NewInt(1)
 		for i := 1; i < info.Threshold; i++ {

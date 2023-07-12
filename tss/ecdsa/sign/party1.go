@@ -42,6 +42,10 @@ func NewP1(publicKey *ecdsa.PublicKey, message string, paiPriKey *paillier.Priva
 }
 
 func (p1 *P1Context) Step1() (*commitment.Commitment, error) {
+	_, err := hex.DecodeString(p1.message)
+	if err != nil {
+		return nil, err
+	}
 	R1 := curves.ScalarToPoint(curve, p1.k1)
 	cmt := commitment.NewCommitment(R1.X, R1.Y)
 	p1.cmtD = &cmt.Msg

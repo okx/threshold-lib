@@ -3,8 +3,9 @@ package vss
 import (
 	"crypto/elliptic"
 	"fmt"
-	"github.com/okx/threshold-lib/crypto/curves"
 	"math/big"
+
+	"github.com/okx/threshold-lib/crypto/curves"
 )
 
 //  verifiable secret sharing scheme
@@ -27,7 +28,10 @@ func NewFeldman(threshold, limit int, curve elliptic.Curve) (*Feldman, error) {
 
 // Evaluate return verifiers and shares
 func (fm *Feldman) Evaluate(secret *big.Int) ([]*curves.ECPoint, []*Share, error) {
-	poly := InitPolynomial(fm.curve, secret, fm.threshold-1)
+	poly, err := InitPolynomial(fm.curve, secret, fm.threshold-1)
+	if err != nil {
+		return nil, nil, err
+	}
 	shares := make([]*Share, fm.limit)
 	for i := 1; i <= fm.limit; i++ {
 		shares[i-1] = poly.EvaluatePolynomial(big.NewInt(int64(i)))

@@ -3,6 +3,7 @@ package vss
 import (
 	"crypto/elliptic"
 	"crypto/rand"
+	"errors"
 	"math/big"
 )
 
@@ -18,18 +19,24 @@ type Share struct {
 }
 
 // InitPolynomial init Coefficients [a0, a1....at] t=degree
-func InitPolynomial(curve elliptic.Curve, secret *big.Int, degree int) *Polynomial {
+func InitPolynomial(curve elliptic.Curve, secret *big.Int, degree int) (*Polynomial, error) {
+	if degree < 1 {
+		return nil, errors.New("degree must be at least 1")
+	}
 	q := curve.Params().N
 	Coefficients := make([]*big.Int, degree+1)
 	Coefficients[0] = secret
 	for i := 1; i <= degree; i++ {
-		r, _ := rand.Prime(rand.Reader, q.BitLen())
+		r, err := rand.Prime(rand.Reader, q.BitLen())
+		if err != nil {
+			return nil, err
+		}
 		Coefficients[i] = r // random generation coefficient
 	}
 	return &Polynomial{
 		Coefficients: Coefficients,
 		QMod:         q,
-	}
+	}, nil
 }
 
 // EvaluatePolynomial a polynomial with coefficients such that:
