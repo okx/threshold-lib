@@ -11,7 +11,7 @@ import (
 // A proof of knowledge of the discrete log of an element h2 = hx1 with respect to h1.
 // In our protocol, we will run two of these in parallel to prove that two elements h1,h2 generate the same group modN.
 
-const Iterations = 128
+const Iterations = 30
 
 type (
 	DlnProof struct {
@@ -43,9 +43,34 @@ func NewDlnProve(h1, h2, x, p, q, N *big.Int) *DlnProof {
 }
 
 func DlnVerify(dp *DlnProof, h1, h2, N *big.Int) bool {
-	if dp == nil || h1 == nil || h2 == nil || N == nil {
+	if dp == nil || h1 == nil || h2 == nil || N == nil || N.Sign() != 1 {
 		return false
 	}
+
+	h1_ := new(big.Int).Mod(h1, N)
+	if h1_.Cmp(one) != 1 || h1_.Cmp(N) != -1 {
+		return false
+	}
+	h2_ := new(big.Int).Mod(h2, N)
+	if h2_.Cmp(one) != 1 || h2_.Cmp(N) != -1 {
+		return false
+	}
+	if h1_.Cmp(h2_) == 0 {
+		return false
+	}
+	for i := range dp.T {
+		a := new(big.Int).Mod(dp.T[i], N)
+		if a.Cmp(one) != 1 || a.Cmp(N) != -1 {
+			return false
+		}
+	}
+	for i := range dp.Alpha {
+		a := new(big.Int).Mod(dp.Alpha[i], N)
+		if a.Cmp(one) != 1 || a.Cmp(N) != -1 {
+			return false
+		}
+	}
+
 	msg := append([]*big.Int{h1, h2, N}, dp.Alpha[:]...)
 	c := crypto.SHA256Int(msg...)
 	cIBI := new(big.Int)
