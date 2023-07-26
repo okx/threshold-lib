@@ -20,6 +20,7 @@ func (ed25519 *Ed25519Sign) SignStep3(msgs []*tss.Message) (*big.Int, *big.Int, 
 	if ed25519.RoundNumber != 3 {
 		return nil, nil, fmt.Errorf("round error")
 	}
+	ed25519.RoundNumber = -1
 	if len(msgs) != (ed25519.Threshold - 1) {
 		return nil, nil, fmt.Errorf("messages number error")
 	}
