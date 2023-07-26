@@ -28,7 +28,7 @@ type PreParams struct {
 }
 
 // GeneratePreParams  recommend to pre-generate locally
-func GeneratePreParams() (*PreParams, error) {
+func GeneratePreParams() *PreParams {
 	concurrency := 4
 	var values = make(chan *big.Int, concurrency)
 	var Pi, Qi *big.Int
@@ -64,7 +64,7 @@ func GeneratePreParams() (*PreParams, error) {
 		P:       pi,
 		Q:       qi,
 	}
-	return preParams, nil
+	return preParams
 }
 
 type P1Data struct {
@@ -78,7 +78,6 @@ type P1Data struct {
 	DlnProof2       *zkp.DlnProof
 	PDLwSlackProof  *zkp.PDLwSlackProof
 	StatementParams *zkp.StatementParams
-	RangeProof      *zkp.RangeProof
 }
 
 // P1 after dkg, prepare for 2-party signature, P1 send encrypt x1 to P2
@@ -104,10 +103,7 @@ func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams
 	}
 
 	if preParams == nil {
-		preParams, err = GeneratePreParams()
-		if err != nil {
-			return nil, err
-		}
+		preParams = GeneratePreParams()
 	}
 	h1i, h2i, alpha, beta, p, q, NTildei :=
 		preParams.H1i,
@@ -139,11 +135,6 @@ func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams
 	if pdlWSlackPf == nil || statementParams == nil {
 		return nil, fmt.Errorf("PDLwSlack proof fail")
 	}
-	// range proof
-	rangeProof, err := zkp.RangeProve(paiPubKey, NTildei, h1i, h2i, E_x1, r, x1)
-	if err != nil {
-		return nil, err
-	}
 
 	p1Data := P1Data{
 		E_x1:            E_x1,
@@ -155,7 +146,6 @@ func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams
 		DlnProof2:       dlnProof2,
 		PDLwSlackProof:  pdlWSlackPf,
 		StatementParams: statementParams,
-		RangeProof:      rangeProof,
 	}
 	bytes, err := json.Marshal(p1Data)
 	if err != nil {

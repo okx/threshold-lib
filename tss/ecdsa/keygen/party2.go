@@ -80,11 +80,6 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 	if !slackVerify {
 		return nil, fmt.Errorf("PDLwSlackVerify fail")
 	}
-	// RangeProof
-	rangeVerify := zkp.RangeVerify(p1Data.RangeProof, p1Data.PaiPubKey, NTildei, h1i, h2i, p1Data.E_x1)
-	if !rangeVerify {
-		return nil, fmt.Errorf("RangeVerify fail")
-	}
 	// P2 additional save key information
 	p2SaveData := &P2SaveData{
 		From:      from,

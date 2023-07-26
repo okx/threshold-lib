@@ -34,12 +34,13 @@ func SHA256Int(in ...*big.Int) *big.Int {
 }
 
 // RandomNum generates a random number r, 1 < r < n.
+// Input n has to be greater than 1, otherwise panic
 func RandomNum(n *big.Int) *big.Int {
 	if n == nil {
 		panic(fmt.Errorf("RandomNum error, n is nil"))
 	}
 	if n.Cmp(one) != 1 {
-		panic(fmt.Errorf("max has to be greater than 1"))
+		panic(fmt.Errorf("RandomNum error: max has to be greater than 1"))
 	}
 	for {
 		r, err := rand.Int(rand.Reader, n)
@@ -55,7 +56,7 @@ func RandomNum(n *big.Int) *big.Int {
 // RandomPrimeNum  `r < n` and `gcd(r,n) = 1`
 func RandomPrimeNum(n *big.Int) (*big.Int, error) {
 	if n.Cmp(one) != 1 {
-		return nil, fmt.Errorf("max has to be greater than 1")
+		return nil, fmt.Errorf("RandomPrimeNum error: max has to be greater than 1")
 	}
 	gcd := new(big.Int)
 	r := new(big.Int)

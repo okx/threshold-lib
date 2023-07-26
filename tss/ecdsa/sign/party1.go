@@ -30,10 +30,7 @@ type P1Context struct {
 
 // NewP1 2-party signature, P1 init
 func NewP1(publicKey *ecdsa.PublicKey, message string, paiPriKey *paillier.PrivateKey) *P1Context {
-	// random generate k1, k=k1*k2
-	k1 := crypto.RandomNum(curve.N)
 	p1Context := &P1Context{
-		k1:        k1,
 		publicKey: publicKey,
 		message:   message,
 		paiPriKey: paiPriKey,
@@ -46,6 +43,8 @@ func (p1 *P1Context) Step1() (*commitment.Commitment, error) {
 	if err != nil {
 		return nil, err
 	}
+	// random generate k1, k=k1*k2
+	p1.k1 = crypto.RandomNum(curve.N)
 	R1 := curves.ScalarToPoint(curve, p1.k1)
 	cmt := commitment.NewCommitment(R1.X, R1.Y)
 	p1.cmtD = &cmt.Msg
