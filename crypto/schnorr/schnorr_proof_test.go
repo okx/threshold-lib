@@ -2,6 +2,7 @@ package schnorr
 
 import (
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
@@ -17,4 +18,20 @@ func TestProof(t *testing.T) {
 
 	res := Verify(proof, X)
 	fmt.Println(res)
+}
+
+func TestProofFaulty(t *testing.T) {
+	forbidden := big.NewInt(0)
+	infinity_point := &curves.ECPoint{Curve: secp256k1.S256(),
+		X: big.NewInt(0), Y: big.NewInt(1)}
+	X := &curves.ECPoint{Curve: secp256k1.S256(),
+		X: big.NewInt(0), Y: big.NewInt(1)}
+	fmt.Println("infinity_point =", infinity_point)
+	fmt.Println("X =", X)
+	proof := &Proof{
+		R: infinity_point,
+		S: forbidden,
+	}
+	res := Verify(proof, X)
+	fmt.Println("TestProofFaulty:", res)
 }

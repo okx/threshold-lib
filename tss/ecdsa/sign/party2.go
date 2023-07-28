@@ -25,15 +25,12 @@ type P2Context struct {
 
 // NewP1 2-party signature, P2 init
 func NewP2(bobPri, E_x1 *big.Int, publicKey *ecdsa.PublicKey, paiPub *paillier.PublicKey, message string) *P2Context {
-	// random generate k2, k=k1*k2
-	k2 := crypto.RandomNum(curve.N)
 	p2Context := &P2Context{
 		x2:        bobPri,
 		E_x1:      E_x1,
 		paiPub:    paiPub,
 		PublicKey: publicKey,
 		message:   message,
-		k2:        k2,
 	}
 	return p2Context
 }
@@ -44,6 +41,9 @@ func (p2 *P2Context) Step1(cmtC *commitment.Commitment) (*schnorr.Proof, *curves
 		return nil, nil, err
 	}
 	p2.cmtC = cmtC
+
+	// random generate k2, k=k1*k2
+	p2.k2 = crypto.RandomNum(curve.N)
 	R2 := curves.ScalarToPoint(curve, p2.k2)
 	proof, err := schnorr.Prove(p2.k2, R2)
 	if err != nil {

@@ -36,6 +36,9 @@ func Verify(pf *Proof, X *curves.ECPoint) bool {
 	if pf == nil || pf.R == nil || pf.S == nil {
 		return false
 	}
+	if !pf.R.IsOnCurve() {
+		return false
+	}
 	q := X.Curve.Params().N
 	h := crypto.SHA256Int(X.X, X.Y, pf.R.X, pf.R.Y)
 	h = new(big.Int).Mod(h, q)
