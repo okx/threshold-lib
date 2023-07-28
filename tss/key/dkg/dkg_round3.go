@@ -54,6 +54,9 @@ func (info *SetupInfo) DKGStep3(msgs []*tss.Message) (*tss.KeyStep3Data, error) 
 		//  actual chaincode = sum(chaincode)
 		chaincode = new(big.Int).Add(chaincode, D[0])
 		verifiers[msg.From], err = UnmarshalVerifiers(curve, D[1:], info.Threshold)
+		if err != nil {
+			return nil, err
+		}
 
 		// feldman verify
 		if ok, err := feldman.Verify(data.Share, verifiers[msg.From]); !ok {
@@ -98,6 +101,9 @@ func (info *SetupInfo) DKGStep3(msgs []*tss.Message) (*tss.KeyStep3Data, error) 
 			point := v[i]
 			point = point.ScalarMult(tmp)
 			Yi, err = Yi.Add(point)
+			if err != nil {
+				return nil, err
+			}
 		}
 		sharePubKeyMap[k] = Yi
 	}
