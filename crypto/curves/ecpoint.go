@@ -62,40 +62,58 @@ func (p *ECPoint) IsOnCurve() bool {
 	return p.Curve.IsOnCurve(p.X, p.Y)
 }
 
-func (p *ECPoint) MarshalJSON() ([]byte, error) {
-	curveName := GetCurveName(p.Curve)
+func (p *ECPoint) PointToHex() (curveName, pointHex string) {
+	if p == nil {
+		return "", ""
+	}
+	curveName = GetCurveName(p.Curve)
+	switch curveName {
+	case Secp256k1:
+		pointHex = p.PointToEcdsaPubKey()
+	case Ed25519:
+		pointHex = p.PointToEd25519PubKey()
+	}
+	return
+}
+
+func (p ECPoint) MarshalJSON() ([]byte, error) {
+	curveName, pointHex := p.PointToHex()
 	if len(curveName) == 0 {
 		return nil, fmt.Errorf("MarshalJSON error, curves are not supported")
 	}
-
 	return json.Marshal(&struct {
-		Curve string
-		X     *big.Int
-		Y     *big.Int
+		Curve string `json:"curve"`
+		Point string `json:"point"`
 	}{
 		Curve: curveName,
-		X:     p.X,
-		Y:     p.Y,
+		Point: pointHex,
 	})
 }
 
 func (p *ECPoint) UnmarshalJSON(payload []byte) error {
-	aux := &struct {
-		Curve string
-		X     *big.Int
-		Y     *big.Int
+	value := struct {
+		Curve string `json:"curve"`
+		Point string `json:"point"`
 	}{}
-	if err := json.Unmarshal(payload, &aux); err != nil {
+
+	if err := json.Unmarshal(payload, &value); err != nil {
+		return fmt.Errorf("ECPoint unmarshal error: %v", err)
+	}
+
+	var point *ECPoint
+	var err error
+	switch value.Curve {
+	case Secp256k1:
+		point, err = EcdsaPubKeyToPoint(value.Point)
+	case Ed25519:
+		point, err = Ed25519PubKeyToPoint(value.Point)
+	default:
+		return fmt.Errorf("curve: %s not supported", value.Curve)
+	}
+	if err != nil {
 		return err
 	}
-	p.X = aux.X
-	p.Y = aux.Y
-	curveName, ok := GetCurveByName(aux.Curve)
-	if !ok {
-		return fmt.Errorf("Curve type not supported")
-	} else {
-		p.Curve = curveName
-	}
+	*p = *point
 
 	if !p.IsOnCurve() {
 		return fmt.Errorf("UnmarshalJSON error, point not on the curves ")
