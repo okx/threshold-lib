@@ -17,7 +17,9 @@ func TestProof(t *testing.T) {
 	proof, _ := Prove(x, X)
 
 	res := Verify(proof, X)
-	fmt.Println(res)
+	if !res {
+		t.Fatal("result should be true")
+	}
 }
 
 func TestProofFaulty(t *testing.T) {
@@ -33,5 +35,7 @@ func TestProofFaulty(t *testing.T) {
 		S: forbidden,
 	}
 	res := Verify(proof, X)
-	fmt.Println("TestProofFaulty:", res)
+	if res {
+		t.Fatal("result should be false")
+	}
 }

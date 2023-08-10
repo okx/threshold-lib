@@ -36,7 +36,7 @@ func Verify(pf *Proof, X *curves.ECPoint) bool {
 	if pf == nil || pf.R == nil || pf.S == nil {
 		return false
 	}
-	if !pf.R.IsOnCurve() {
+	if !pf.R.IsOnCurve() || !X.IsOnCurve() {
 		return false
 	}
 	q := X.Curve.Params().N
