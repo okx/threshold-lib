@@ -5,11 +5,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"testing"
+
 	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"github.com/okx/threshold-lib/tss"
 	"github.com/okx/threshold-lib/tss/key/dkg"
-	"math/big"
-	"testing"
 )
 
 func TestEd25519(t *testing.T) {
@@ -48,6 +49,8 @@ func sign_p1_p2(p1Data, p2Data *tss.KeyStep3Data, publicKey *edwards.PublicKey, 
 	signature := edwards.NewSignature(r, s)
 	ret := signature.Verify(message, publicKey)
 	fmt.Println("Verify: ", ret)
+	fmt.Println("signature r", signature.R.Text(16))
+	fmt.Println("signature s", signature.S.Text(16))
 }
 
 func sign_p1_p3(p1Data, p3Data *tss.KeyStep3Data, publicKey *edwards.PublicKey, message []byte) {

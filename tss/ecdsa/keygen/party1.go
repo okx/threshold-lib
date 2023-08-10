@@ -158,3 +158,58 @@ func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams
 	}
 	return message, nil
 }
+
+func (p P1Data) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		E_x1            string               `json:"e_x1,omitempty"`
+		Proof           *schnorr.Proof       `json:"proof,omitempty"`
+		PaiPubKey       *paillier.PublicKey  `json:"pai_pubkey,omitempty"`
+		X1              *curves.ECPoint      `json:"x1,omitempty"`
+		NIZKProof       []string             `json:"nizk_proof,omitempty"`
+		DlnProof1       *zkp.DlnProof        `json:"dln_proof_1,omitempty"`
+		DlnProof2       *zkp.DlnProof        `json:"dln_proof_2,omitempty"`
+		PDLwSlackProof  *zkp.PDLwSlackProof  `json:"pdlw_slack_proof,omitempty"`
+		StatementParams *zkp.StatementParams `json:"statement_params,omitempty"`
+	}{
+		E_x1:            p.E_x1.Text(16),
+		Proof:           p.Proof,
+		PaiPubKey:       p.PaiPubKey,
+		X1:              p.X1,
+		NIZKProof:       p.NIZKProof,
+		DlnProof1:       p.DlnProof1,
+		DlnProof2:       p.DlnProof2,
+		PDLwSlackProof:  p.PDLwSlackProof,
+		StatementParams: p.StatementParams,
+	})
+}
+
+func (p *P1Data) UnmarshalJSON(text []byte) error {
+	value := &struct {
+		E_x1            string               `json:"e_x1,omitempty"`
+		Proof           *schnorr.Proof       `json:"proof,omitempty"`
+		PaiPubKey       *paillier.PublicKey  `json:"pai_pubkey,omitempty"`
+		X1              *curves.ECPoint      `json:"x1,omitempty"`
+		NIZKProof       []string             `json:"nizk_proof,omitempty"`
+		DlnProof1       *zkp.DlnProof        `json:"dln_proof_1,omitempty"`
+		DlnProof2       *zkp.DlnProof        `json:"dln_proof_2,omitempty"`
+		PDLwSlackProof  *zkp.PDLwSlackProof  `json:"pdlw_slack_proof,omitempty"`
+		StatementParams *zkp.StatementParams `json:"statement_params,omitempty"`
+	}{}
+	if err := json.Unmarshal(text, &value); err != nil {
+		return fmt.Errorf("P1Data unmarshal error: %v", err)
+	}
+
+	var ok bool
+	if p.E_x1, ok = new(big.Int).SetString(value.E_x1, 16); !ok {
+		return fmt.Errorf("cannot unmarshal %q into a *big.Int", text)
+	}
+	p.Proof = value.Proof
+	p.PaiPubKey = value.PaiPubKey
+	p.X1 = value.X1
+	p.NIZKProof = value.NIZKProof
+	p.DlnProof1 = value.DlnProof1
+	p.DlnProof2 = value.DlnProof2
+	p.PDLwSlackProof = value.PDLwSlackProof
+	p.StatementParams = value.StatementParams
+	return nil
+}

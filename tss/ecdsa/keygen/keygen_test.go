@@ -3,12 +3,13 @@ package keygen
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
 	"github.com/okx/threshold-lib/tss"
 	"github.com/okx/threshold-lib/tss/key/bip32"
 	"github.com/okx/threshold-lib/tss/key/dkg"
-	"testing"
 )
 
 const (
@@ -49,6 +50,7 @@ func TestKeyGen(t *testing.T) {
 	err := json.Unmarshal([]byte(preParamsStr), preParams)
 	if err != nil {
 		fmt.Println("preParams Unmarshal error, ", err)
+		return
 	}
 	// 1-->2   1--->3
 	paiPriKey, _, _ := paillier.NewKeyPair(8)
@@ -71,5 +73,4 @@ func TestKeyGen(t *testing.T) {
 	tssKey, _ = bip32.NewTssKey(p2SaveData.ShareI, p2SaveData.PublicKey, p2SaveData.ChainCode)
 	tssKey, _ = tssKey.NewChildKey(996)
 	fmt.Println(tssKey.PublicKey())
-
 }

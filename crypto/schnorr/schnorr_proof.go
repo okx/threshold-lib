@@ -1,6 +1,7 @@
 package schnorr
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -50,4 +51,31 @@ func Verify(pf *Proof, X *curves.ECPoint) bool {
 		return false
 	}
 	return RXh.X.Cmp(SG.X) == 0 && RXh.Y.Cmp(SG.Y) == 0
+}
+
+func (p Proof) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		R *curves.ECPoint `json:"r,omitempty"`
+		S string          `json:"s,omitempty"`
+	}{
+		R: p.R,
+		S: p.S.Text(16),
+	})
+}
+
+func (p *Proof) UnmarshalJSON(text []byte) error {
+	value := &struct {
+		R *curves.ECPoint `json:"r,omitempty"`
+		S string          `json:"s,omitempty"`
+	}{}
+	if err := json.Unmarshal(text, &value); err != nil {
+		return fmt.Errorf("SchnorrProof unmarshal error: %v", err)
+	}
+
+	p.R = value.R
+	var ok bool
+	if p.S, ok = new(big.Int).SetString(value.S, 16); !ok {
+		return fmt.Errorf("cannot unmarshal %q into a *big.Int", text)
+	}
+	return nil
 }

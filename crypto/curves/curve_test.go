@@ -61,3 +61,31 @@ func TestPubKeyToPoint(t *testing.T) {
 		fmt.Println(point2)
 	}
 }
+
+func TestECPoint_MarshalJSON(t *testing.T) {
+	ecdsaPoint, _ := EcdsaPubKeyToPoint("0220dcc94db44d846a174b10765bbc2ea916988d098598eb812aaddd5c7378f29d")
+	bytes1, err := json.Marshal(ecdsaPoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(string(bytes1))
+
+	var ecdsaPoint1 ECPoint
+	if err = json.Unmarshal(bytes1, &ecdsaPoint1); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(ecdsaPoint1)
+
+	ed25519Point, _ := Ed25519PubKeyToPoint("bb10a2166436f1d8d1b8dc18403ed0b254b5d024e4e1b1a62d697803cb1c4379")
+	bytes2, err := json.Marshal(ed25519Point)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(string(bytes2))
+
+	var ed25519Point1 ECPoint
+	if err = json.Unmarshal(bytes2, &ed25519Point1); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(ed25519Point1)
+}

@@ -3,6 +3,7 @@ package sign
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/schnorr"
@@ -64,4 +65,33 @@ func (ed25519 *Ed25519Sign) SignStep2(msgs []*tss.Message) (map[int]*tss.Message
 		out[i] = message
 	}
 	return out, nil
+}
+
+func (s Step2Data) MarshalJSON() ([]byte, error) {
+	wits := commitment.WitnessMarshalJSON(s.Witness)
+	return json.Marshal(&struct {
+		Witness []string       `json:"witness,omitempty"`
+		Proof   *schnorr.Proof `json:"proof,omitempty"`
+	}{
+		Witness: wits,
+		Proof:   s.Proof,
+	})
+}
+
+func (s *Step2Data) UnmarshalJSON(text []byte) error {
+	value := &struct {
+		Witness []string       `json:"witness,omitempty"`
+		Proof   *schnorr.Proof `json:"proof,omitempty"`
+	}{}
+	if err := json.Unmarshal(text, &value); err != nil {
+		return fmt.Errorf("Step1Data unmarshal error: %v", err)
+	}
+
+	witness, err := commitment.WitnessUnmarshalJSON(value.Witness)
+	if err != nil {
+		return err
+	}
+	s.Witness = witness
+	s.Proof = value.Proof
+	return nil
 }

@@ -3,6 +3,8 @@ package sign
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/curves"
@@ -44,4 +46,27 @@ func (ed25519 *Ed25519Sign) SignStep1() (map[int]*tss.Message, error) {
 		out[i] = message
 	}
 	return out, nil
+}
+
+func (s Step1Data) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		C string `json:"c,omitempty"`
+	}{
+		C: s.C.Text(16),
+	})
+}
+
+func (s *Step1Data) UnmarshalJSON(text []byte) error {
+	value := &struct {
+		C string `json:"c,omitempty"`
+	}{}
+	if err := json.Unmarshal(text, &value); err != nil {
+		return fmt.Errorf("Step1Data unmarshal error: %v", err)
+	}
+
+	var ok bool
+	if s.C, ok = new(big.Int).SetString(value.C, 16); !ok {
+		return fmt.Errorf("cannot unmarshal %q into a *big.Int", text)
+	}
+	return nil
 }

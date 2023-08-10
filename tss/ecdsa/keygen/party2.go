@@ -90,3 +90,44 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 	}
 	return p2SaveData, nil
 }
+
+func (p P2SaveData) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		From      int                 `json:"from,omitempty"`
+		To        int                 `json:"to,omitempty"`
+		E_x1      string              `json:"e_x1,omitempty"`
+		PaiPubKey *paillier.PublicKey `json:"pai_pubkey,omitempty"`
+		X2        string              `json:"x2,omitempty"`
+	}{
+		From:      p.From,
+		To:        p.To,
+		E_x1:      p.E_x1.Text(16),
+		PaiPubKey: p.PaiPubKey,
+		X2:        p.X2.Text(16),
+	})
+}
+
+func (p *P2SaveData) UnmarshalJSON(text []byte) error {
+	value := &struct {
+		From      int                 `json:"from,omitempty"`
+		To        int                 `json:"to,omitempty"`
+		E_x1      string              `json:"e_x1,omitempty"`
+		PaiPubKey *paillier.PublicKey `json:"pai_pubkey,omitempty"`
+		X2        string              `json:"x2,omitempty"`
+	}{}
+	if err := json.Unmarshal(text, &value); err != nil {
+		return fmt.Errorf("P2SaveData unmarshal error: %v", err)
+	}
+
+	var ok bool
+	if p.E_x1, ok = new(big.Int).SetString(value.E_x1, 16); !ok {
+		return fmt.Errorf("cannot unmarshal %q into a *big.Int", text)
+	}
+	if p.X2, ok = new(big.Int).SetString(value.X2, 16); !ok {
+		return fmt.Errorf("cannot unmarshal %q into a *big.Int", text)
+	}
+	p.From = value.From
+	p.To = value.To
+	p.PaiPubKey = value.PaiPubKey
+	return nil
+}
