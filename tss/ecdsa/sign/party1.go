@@ -95,6 +95,7 @@ func (p1 *P1Context) Step3(E_k2_h_xr *big.Int) (*big.Int, *big.Int, error) {
 	// check ecdsa signature
 	ok := ecdsa.Verify(p1.publicKey, message, r, s)
 	if !ok {
+		// IMPORTANT: If Verify fails, actively disallow signing to prevent attacks described in CVE-2023-33242
 		return nil, nil, fmt.Errorf("ecdsa sign verify fail")
 	}
 	return r, s, nil
