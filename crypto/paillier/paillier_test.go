@@ -29,3 +29,18 @@ func TestNIZK(t *testing.T) {
 	verify := NIZKVerify(publicKey.N, proof)
 	fmt.Println(verify)
 }
+
+func TestNIZKwithSession(t *testing.T) {
+	privateKey, publicKey, _ := NewKeyPair(8)
+	sessionID := []byte("")
+
+	proof, err := NIZKProofWithSession(privateKey.N, privateKey.Phi, sessionID)
+	if err != nil {
+		t.Fatal("ZK Proof fails")
+	}
+
+	verify := NIZKVerifyWithSession(publicKey.N, proof, sessionID)
+	if verify != true {
+		t.Fatal("ZK Verify fails")
+	}
+}
