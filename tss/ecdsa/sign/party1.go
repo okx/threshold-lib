@@ -19,6 +19,8 @@ var (
 )
 
 type P1Context struct {
+	sessionID *big.Int
+
 	publicKey *ecdsa.PublicKey
 	paiPriKey *paillier.PrivateKey
 
@@ -30,37 +32,41 @@ type P1Context struct {
 
 // NewP1 2-party signature, P1 init
 func NewP1(publicKey *ecdsa.PublicKey, message string, paiPriKey *paillier.PrivateKey) *P1Context {
+	msg, err := hex.DecodeString(message)
+	if err != nil {
+		return nil
+	}
+	data := new(big.Int).SetBytes(msg)
+	sessionId := crypto.SHA256Int(publicKey.X, publicKey.Y, data)
+
 	p1Context := &P1Context{
 		publicKey: publicKey,
 		message:   message,
 		paiPriKey: paiPriKey,
+		sessionID: sessionId,
 	}
 	return p1Context
 }
 
 func (p1 *P1Context) Step1() (*commitment.Commitment, error) {
-	_, err := hex.DecodeString(p1.message)
-	if err != nil {
-		return nil, err
-	}
 	// random generate k1, k=k1*k2
 	p1.k1 = crypto.RandomNum(curve.N)
 	R1 := curves.ScalarToPoint(curve, p1.k1)
-	cmt := commitment.NewCommitment(R1.X, R1.Y)
+	cmt := commitment.NewCommitment(p1.sessionID, R1.X, R1.Y)
 	p1.cmtD = &cmt.Msg
 	return &cmt.C, nil
 }
 
 func (p1 *P1Context) Step2(p2Proof *schnorr.Proof, R2 *curves.ECPoint) (*schnorr.Proof, *commitment.Witness, error) {
 	// zk schnorr verify k2
-	verify := schnorr.Verify(p2Proof, R2)
+	verify := schnorr.VerifyWithId(p1.sessionID, p2Proof, R2)
 	if !verify {
 		return nil, nil, fmt.Errorf("schnorr verify fail")
 	}
 	p1.R2 = R2
 	// zk schnorr prove k1
 	R1 := curves.ScalarToPoint(curve, p1.k1)
-	proof, err := schnorr.Prove(p1.k1, R1)
+	proof, err := schnorr.ProveWithId(p1.sessionID, p1.k1, R1)
 	if err != nil {
 		return nil, nil, err
 	}
