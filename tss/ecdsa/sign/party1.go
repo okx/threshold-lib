@@ -49,6 +49,9 @@ func NewP1(publicKey *ecdsa.PublicKey, message string, paiPriKey *paillier.Priva
 }
 
 func (p1 *P1Context) Step1() (*commitment.Commitment, error) {
+	if EcdsaSignBanList.Has(EcdsaPubKeyToString(*p1.publicKey)) {
+		return nil, fmt.Errorf("Public key banned from ECDSA sign")
+	}
 	// random generate k1, k=k1*k2
 	p1.k1 = crypto.RandomNum(curve.N)
 	R1 := curves.ScalarToPoint(curve, p1.k1)
@@ -102,7 +105,12 @@ func (p1 *P1Context) Step3(E_k2_h_xr *big.Int) (*big.Int, *big.Int, error) {
 	ok := ecdsa.Verify(p1.publicKey, message, r, s)
 	if !ok {
 		// IMPORTANT: If Verify fails, actively disallow signing to prevent attacks described in CVE-2023-33242
+		EcdsaSignBanList.Add(EcdsaPubKeyToString(*p1.publicKey))
 		return nil, nil, fmt.Errorf("ecdsa sign verify fail")
 	}
 	return r, s, nil
+}
+
+func EcdsaPubKeyToString(pubKey ecdsa.PublicKey) string {
+	return fmt.Sprintf("%#x%#x", pubKey.X, pubKey.Y)
 }
