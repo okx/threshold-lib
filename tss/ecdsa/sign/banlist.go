@@ -1,8 +1,10 @@
 package sign
 
+// After the signature verification fails, it is forbidden to continue to sign
+// prevent attacks described in CVE-2023-33242 https://www.cve.org/CVERecord?id=CVE-2023-33242
 type BanList map[string]struct{}
 
-var EcdsaSignBanList BanList = make(map[string]struct{})
+var BanSignList BanList = make(map[string]struct{})
 
 func (s BanList) Add(id string) {
 	s[id] = struct{}{}
@@ -28,9 +30,9 @@ func (s BanList) Import(list []string) {
 }
 
 func (s BanList) Export() []string {
-	list := []string{}
-    for key := range s {
-        list = append(list, key)
-    }
+	var list []string
+	for key := range s {
+		list = append(list, key)
+	}
 	return list
 }
