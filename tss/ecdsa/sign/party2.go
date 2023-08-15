@@ -14,6 +14,8 @@ import (
 )
 
 type P2Context struct {
+	sessionID *big.Int
+
 	x2        *big.Int // x = x1 + x2
 	E_x1      *big.Int
 	paiPub    *paillier.PublicKey
@@ -25,27 +27,31 @@ type P2Context struct {
 
 // NewP1 2-party signature, P2 init
 func NewP2(bobPri, E_x1 *big.Int, publicKey *ecdsa.PublicKey, paiPub *paillier.PublicKey, message string) *P2Context {
+	msg, err := hex.DecodeString(message)
+	if err != nil {
+		return nil
+	}
+	data := new(big.Int).SetBytes(msg)
+	sessionId := crypto.SHA256Int(publicKey.X, publicKey.Y, data)
+
 	p2Context := &P2Context{
 		x2:        bobPri,
 		E_x1:      E_x1,
 		paiPub:    paiPub,
 		PublicKey: publicKey,
 		message:   message,
+		sessionID: sessionId,
 	}
 	return p2Context
 }
 
 func (p2 *P2Context) Step1(cmtC *commitment.Commitment) (*schnorr.Proof, *curves.ECPoint, error) {
-	_, err := hex.DecodeString(p2.message)
-	if err != nil {
-		return nil, nil, err
-	}
 	p2.cmtC = cmtC
 
 	// random generate k2, k=k1*k2
 	p2.k2 = crypto.RandomNum(curve.N)
 	R2 := curves.ScalarToPoint(curve, p2.k2)
-	proof, err := schnorr.Prove(p2.k2, R2)
+	proof, err := schnorr.ProveWithId(p2.sessionID, p2.k2, R2)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -63,11 +69,14 @@ func (p2 *P2Context) Step2(cmtD *commitment.Witness, p1Proof *schnorr.Proof) (*b
 	if !ok {
 		return nil, fmt.Errorf("commitment DeCommit fail")
 	}
-	R1, err := curves.NewECPoint(curve, commitD[0], commitD[1])
+	if commitD[0].Cmp(p2.sessionID) != 0 {
+		return nil, fmt.Errorf("p2 Step2 commitment sessionId error")
+	}
+	R1, err := curves.NewECPoint(curve, commitD[1], commitD[2])
 	if err != nil {
 		return nil, err
 	}
-	verify := schnorr.Verify(p1Proof, R1)
+	verify := schnorr.VerifyWithId(p2.sessionID, p1Proof, R1)
 	if !verify {
 		return nil, fmt.Errorf("schnorr verify fail")
 	}

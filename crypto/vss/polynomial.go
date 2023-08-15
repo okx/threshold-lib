@@ -3,7 +3,7 @@ package vss
 import (
 	"crypto/elliptic"
 	"crypto/rand"
-	"errors"
+	"fmt"
 	"math/big"
 )
 
@@ -21,7 +21,7 @@ type Share struct {
 // InitPolynomial init Coefficients [a0, a1....at] t=degree
 func InitPolynomial(curve elliptic.Curve, secret *big.Int, degree int) (*Polynomial, error) {
 	if degree < 1 {
-		return nil, errors.New("degree must be at least 1")
+		return nil, fmt.Errorf("degree must be at least 1")
 	}
 	q := curve.Params().N
 	Coefficients := make([]*big.Int, degree+1)
