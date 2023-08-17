@@ -29,12 +29,8 @@ func (info *RefreshInfo) DKGStep3(msgs []*tss.Message) (*tss.KeyStep3Data, error
 	}
 
 	verifiers := make(map[int][]*curves.ECPoint, len(msgs))
+	verifiers[info.DeviceNumber] = info.verifiers
 	xi := info.secretShares[info.DeviceNumber-1]
-	if info.isDevotee {
-		verifiers[info.DeviceNumber] = info.verifiers
-	} else {
-		xi.Y = big.NewInt(0)
-	}
 	for _, msg := range msgs {
 		if msg.To != info.DeviceNumber {
 			return nil, fmt.Errorf("message sending error")
@@ -52,28 +48,24 @@ func (info *RefreshInfo) DKGStep3(msgs []*tss.Message) (*tss.KeyStep3Data, error
 			return nil, fmt.Errorf("commitment DeCommit fail")
 		}
 
-		// only add the values of the contributors
-		if msg.From == info.devoteList[0] || msg.From == info.devoteList[1] {
-			xi.Y = new(big.Int).Add(xi.Y, content.Share.Y)
-
-			verifiers[msg.From], err = dkg.UnmarshalVerifiers(curve, D, info.Threshold)
-			if ok, err := feldman.Verify(content.Share, verifiers[msg.From]); !ok {
-				if err != nil {
-					return nil, err
-				} else {
-					return nil, fmt.Errorf("invalid share for participant  ")
-				}
-			}
-
-			ujPoint := verifiers[msg.From][0]
-			point, err := curves.NewECPoint(curve, ujPoint.X, ujPoint.Y)
+		verifiers[msg.From], err = dkg.UnmarshalVerifiers(curve, D, info.Threshold)
+		if ok, err := feldman.Verify(content.Share, verifiers[msg.From]); !ok {
 			if err != nil {
 				return nil, err
+			} else {
+				return nil, fmt.Errorf("invalid share for participant  ")
 			}
-			verify := schnorr.Verify(content.Proof, point)
-			if !verify {
-				return nil, fmt.Errorf("schnorr verify fail")
-			}
+		}
+		xi.Y = new(big.Int).Add(xi.Y, content.Share.Y)
+
+		ujPoint := verifiers[msg.From][0]
+		point, err := curves.NewECPoint(curve, ujPoint.X, ujPoint.Y)
+		if err != nil {
+			return nil, err
+		}
+		verify := schnorr.Verify(content.Proof, point)
+		if !verify {
+			return nil, fmt.Errorf("schnorr verify fail")
 		}
 	}
 
