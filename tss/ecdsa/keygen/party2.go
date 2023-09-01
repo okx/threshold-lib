@@ -7,6 +7,7 @@ import (
 
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
+	"github.com/okx/threshold-lib/crypto/pedersen"
 	"github.com/okx/threshold-lib/crypto/schnorr"
 	"github.com/okx/threshold-lib/crypto/vss"
 	"github.com/okx/threshold-lib/crypto/zkp"
@@ -22,7 +23,7 @@ type P2SaveData struct {
 }
 
 // P2 after dkg, prepare for 2-party signature, P2 receives encrypt x1 and paillier public key from P1
-func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to int) (*P2SaveData, error) {
+func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to int, ped *pedersen.PedersenParameters) (*P2SaveData, error) {
 	if msg.From != from || msg.To != to {
 		return nil, fmt.Errorf("message mismatch")
 	}
@@ -80,6 +81,19 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 	if !slackVerify {
 		return nil, fmt.Errorf("PDLwSlackVerify fail")
 	}
+
+	// paillier blum verify
+	paillierBlumVerify := zkp.PaillierBlumVerify(p1Data.PaiPubKey.N, p1Data.PaillierBlumProof)
+	if !paillierBlumVerify {
+		return nil, fmt.Errorf("PaillierBlumVerify fail")
+	}
+
+	// no small factor verify
+	nsfVerify := zkp.NoSmallFactorVerify(p1Data.PaiPubKey.N, p1Data.NSFProof, ped)
+	if !nsfVerify {
+		return nil, fmt.Errorf("NoSmallFactorVerify fail")
+	}
+
 	// P2 additional save key information
 	p2SaveData := &P2SaveData{
 		From:      from,
