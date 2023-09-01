@@ -3,14 +3,16 @@ package reshare
 import (
 	"crypto/elliptic"
 	"fmt"
-	"github.com/decred/dcrd/dcrec/edwards/v2"
+	"testing"
+
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/okx/threshold-lib/tss"
 	"github.com/okx/threshold-lib/tss/key/dkg"
-	"testing"
 )
 
 func TestRefresh(t *testing.T) {
-	curve := edwards.Edwards()
+	// curve := edwards.Edwards()
+	curve := secp256k1.S256()
 	p1Data, p2Data, p3Data := KeyGen(curve)
 	// Reset private key share by 1, 3
 	devoteList := [2]int{1, 3}

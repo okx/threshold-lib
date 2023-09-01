@@ -59,6 +59,10 @@ func (info *RefreshInfo) DKGStep3(msgs []*tss.Message) (*tss.KeyStep3Data, error
 		xi.Y = new(big.Int).Add(xi.Y, content.Share.Y)
 
 		ujPoint := verifiers[msg.From][0]
+		// filter 0*G
+		if ujPoint.X.Cmp(big.NewInt(0)) == 0 || ujPoint.Y.Cmp(big.NewInt(0)) == 0 {
+			continue
+		}
 		point, err := curves.NewECPoint(curve, ujPoint.X, ujPoint.Y)
 		if err != nil {
 			return nil, err
@@ -74,6 +78,9 @@ func (info *RefreshInfo) DKGStep3(msgs []*tss.Message) (*tss.KeyStep3Data, error
 		v[j] = curves.ScalarToPoint(curve, big.NewInt(0))
 
 		for _, verifier := range verifiers {
+			if !verifier[j].IsOnCurve() {
+				continue
+			}
 			v[j], err = v[j].Add(verifier[j])
 			if err != nil {
 				return nil, err
