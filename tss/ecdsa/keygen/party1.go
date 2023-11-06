@@ -9,6 +9,7 @@ import (
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
+	"github.com/okx/threshold-lib/crypto/pedersen"
 	"github.com/okx/threshold-lib/crypto/schnorr"
 	"github.com/okx/threshold-lib/crypto/vss"
 	"github.com/okx/threshold-lib/crypto/zkp"
@@ -73,16 +74,18 @@ type P1Data struct {
 	PaiPubKey *paillier.PublicKey // paillier public key
 	X1        *curves.ECPoint
 
-	NIZKProof       []string
-	DlnProof1       *zkp.DlnProof
-	DlnProof2       *zkp.DlnProof
-	PDLwSlackProof  *zkp.PDLwSlackProof
-	StatementParams *zkp.StatementParams
+	NIZKProof         []string
+	DlnProof1         *zkp.DlnProof
+	DlnProof2         *zkp.DlnProof
+	PDLwSlackProof    *zkp.PDLwSlackProof
+	StatementParams   *zkp.StatementParams
+	PaillierBlumProof *zkp.PaillierBlumProof
+	NSFProof          *zkp.NoSmallFactorProof
 }
 
 // P1 after dkg, prepare for 2-party signature, P1 send encrypt x1 to P2
 // paillier key pair generation is time-consuming, generated in advance, encrypted storage?
-func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams *PreParams) (*tss.Message, error) {
+func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams *PreParams, ped *pedersen.PedersenParameters) (*tss.Message, error) {
 	// lagrangian interpolation x1
 	x1 := vss.CalLagrangian(curve, big.NewInt(int64(from)), share1, []*big.Int{big.NewInt(int64(from)), big.NewInt(int64(to))})
 	paiPubKey := &paiPriKey.PublicKey
@@ -136,16 +139,24 @@ func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams
 		return nil, fmt.Errorf("PDLwSlack proof fail")
 	}
 
+	// PaillierBlumProof
+	paillierBlumPf := zkp.PaillierBlumProve(paiPubKey.N, paiPriKey.P, paiPriKey.Q)
+
+	// No Small Factor Proof
+	nsfProof := zkp.NoSmallFactorProve(paiPubKey.N, paiPriKey.P, paiPriKey.Q, ped)
+
 	p1Data := P1Data{
-		E_x1:            E_x1,
-		Proof:           proof,
-		PaiPubKey:       paiPubKey,
-		X1:              X1,
-		NIZKProof:       nizkProof,
-		DlnProof1:       dlnProof1,
-		DlnProof2:       dlnProof2,
-		PDLwSlackProof:  pdlWSlackPf,
-		StatementParams: statementParams,
+		E_x1:              E_x1,
+		Proof:             proof,
+		PaiPubKey:         paiPubKey,
+		X1:                X1,
+		NIZKProof:         nizkProof,
+		DlnProof1:         dlnProof1,
+		DlnProof2:         dlnProof2,
+		PDLwSlackProof:    pdlWSlackPf,
+		StatementParams:   statementParams,
+		PaillierBlumProof: paillierBlumPf,
+		NSFProof:          nsfProof,
 	}
 	bytes, err := json.Marshal(p1Data)
 	if err != nil {

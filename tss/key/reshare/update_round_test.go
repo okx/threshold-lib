@@ -3,10 +3,11 @@ package reshare
 import (
 	"crypto/elliptic"
 	"fmt"
+	"testing"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/okx/threshold-lib/tss"
 	"github.com/okx/threshold-lib/tss/key/dkg"
-	"testing"
 )
 
 func TestRefresh(t *testing.T) {
