@@ -14,8 +14,8 @@ func TestAffGProof(t *testing.T) {
 	// -----------------------GeneratePreParams-------------------------------
 	fmt.Println("----------------------- TestAffGProof ---------------------------------")
 	pesersen, _ := pedersen.NewPedersenParameters(8)
-	const bits = 512
-	// const bits = 1024
+	// const bits = 512
+	const bits = 1024
 
 	concurrency := 4
 	var values = make(chan *big.Int, concurrency)
