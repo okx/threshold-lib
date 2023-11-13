@@ -77,9 +77,9 @@ func TestEcdsaSign(t *testing.T) {
 	}
 
 	paiPrivate, _, _ := paillier.NewKeyPair(8)
-	p1Dto, _ := keygen.P1(p1Data.ShareI, paiPrivate, p1Data.Id, p2Data.Id, preParams, ped)
+	p1Dto, _ := keygen.P1(p1Data.ShareI, paiPrivate, p1Data.Id, p2Data.Id, preParams)
 	publicKey, _ := curves.NewECPoint(curve, p2Data.PublicKey.X, p2Data.PublicKey.Y)
-	p2SaveData, err := keygen.P2(p2Data.ShareI, publicKey, p1Dto, p1Data.Id, p2Data.Id, ped)
+	p2SaveData, err := keygen.P2(p2Data.ShareI, publicKey, p1Dto, p1Data.Id, p2Data.Id)
 	fmt.Println(p2SaveData, err)
 
 	fmt.Println("=========bip32==========")
