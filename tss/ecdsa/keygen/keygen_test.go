@@ -3,12 +3,13 @@ package keygen
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
 	"github.com/okx/threshold-lib/tss"
 	"github.com/okx/threshold-lib/tss/key/bip32"
 	"github.com/okx/threshold-lib/tss/key/dkg"
-	"testing"
 )
 
 const (
@@ -50,6 +51,7 @@ func TestKeyGen(t *testing.T) {
 	if err != nil {
 		fmt.Println("preParams Unmarshal error, ", err)
 	}
+
 	// 1-->2   1--->3
 	paiPriKey, _, _ := paillier.NewKeyPair(8)
 	p1Data, _ := P1(p1SaveData.ShareI, paiPriKey, setUp1.DeviceNumber, setUp2.DeviceNumber, preParams)

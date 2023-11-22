@@ -80,6 +80,7 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 	if !slackVerify {
 		return nil, fmt.Errorf("PDLwSlackVerify fail")
 	}
+
 	// P2 additional save key information
 	p2SaveData := &P2SaveData{
 		From:      from,
