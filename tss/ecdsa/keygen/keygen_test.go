@@ -3,12 +3,14 @@ package keygen
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
+	"github.com/okx/threshold-lib/crypto/pedersen"
 	"github.com/okx/threshold-lib/tss"
 	"github.com/okx/threshold-lib/tss/key/bip32"
 	"github.com/okx/threshold-lib/tss/key/dkg"
-	"testing"
 )
 
 const (
@@ -50,17 +52,21 @@ func TestKeyGen(t *testing.T) {
 	if err != nil {
 		fmt.Println("preParams Unmarshal error, ", err)
 	}
+
 	// 1-->2   1--->3
 	paiPriKey, _, _ := paillier.NewKeyPair(8)
-	p1Data, _ := P1(p1SaveData.ShareI, paiPriKey, setUp1.DeviceNumber, setUp2.DeviceNumber, preParams)
+	// ped2 should be provided by p2 to p1 for p1's proving and p2's verification.
+	p2_ped := &pedersen.PedersenParameters{S: preParams.H2i, T: preParams.H1i, Ntilde: preParams.NTildei}
+
+	p1Data, _, _, _ := P1(p1SaveData.ShareI, paiPriKey, setUp1.DeviceNumber, setUp2.DeviceNumber, preParams, p2_ped)
 	fmt.Println("p1Data", p1Data)
 	publicKey, _ := curves.NewECPoint(curve, p2SaveData.PublicKey.X, p2SaveData.PublicKey.Y)
-	p2Data, _ := P2(p2SaveData.ShareI, publicKey, p1Data, setUp1.DeviceNumber, setUp2.DeviceNumber)
+	p2Data, _ := P2(p2SaveData.ShareI, publicKey, p1Data, setUp1.DeviceNumber, setUp2.DeviceNumber, p2_ped)
 	fmt.Println("p2Data", p2Data)
 
-	p1Data, _ = P1(p1SaveData.ShareI, paiPriKey, setUp1.DeviceNumber, setUp3.DeviceNumber, preParams)
+	p1Data, _, _, _ = P1(p1SaveData.ShareI, paiPriKey, setUp1.DeviceNumber, setUp3.DeviceNumber, preParams, p2_ped)
 	fmt.Println("p1Data", p1Data)
-	p2Data, _ = P2(p3SaveData.ShareI, publicKey, p1Data, setUp1.DeviceNumber, setUp3.DeviceNumber)
+	p2Data, _ = P2(p3SaveData.ShareI, publicKey, p1Data, setUp1.DeviceNumber, setUp3.DeviceNumber, p2_ped)
 	fmt.Println("p2Data", p2Data)
 
 	fmt.Println("=========bip32==========")

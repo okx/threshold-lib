@@ -21,6 +21,8 @@ type (
 		PublicKey
 		Lambda *big.Int // lcm(p-1, q-1)
 		Phi    *big.Int // (p-1) * (q-1)
+		P      *big.Int
+		Q      *big.Int
 	}
 )
 
@@ -62,7 +64,7 @@ func NewKeyPair(concurrency ...int) (*PrivateKey, *PublicKey, error) {
 	lambda := new(big.Int).Div(phi, gcd)
 
 	publicKey := &PublicKey{N: n}
-	privateKey := &PrivateKey{PublicKey: *publicKey, Lambda: lambda, Phi: phi}
+	privateKey := &PrivateKey{PublicKey: *publicKey, Lambda: lambda, Phi: phi, P: p, Q: q}
 	return privateKey, publicKey, nil
 }
 
@@ -121,7 +123,8 @@ func (pk *PublicKey) HomoAdd(c1, c2 *big.Int) (*big.Int, error) {
 }
 
 // HomoAddPlain   E(a+b) = E(a) * g^b mod n^2
-//						 = E(a) * (1 + b*n) mod n^2
+//
+//	= E(a) * (1 + b*n) mod n^2
 func (pk *PublicKey) HomoAddPlain(eA, b *big.Int) (*big.Int, error) {
 	N2 := pk.N2()
 	if eA.Cmp(zero) == -1 || eA.Cmp(N2) != -1 { //  // 0 <= eA < N2

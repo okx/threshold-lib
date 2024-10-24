@@ -10,7 +10,9 @@ import (
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
+	"github.com/okx/threshold-lib/crypto/pedersen"
 	"github.com/okx/threshold-lib/crypto/schnorr"
+	"github.com/okx/threshold-lib/crypto/zkp"
 )
 
 type P2Context struct {
@@ -23,10 +25,11 @@ type P2Context struct {
 	message   string
 	k2        *big.Int
 	cmtC      *commitment.Commitment
+	p1_ped    *pedersen.PedersenParameters
 }
 
 // NewP1 2-party signature, P2 init
-func NewP2(bobPri, E_x1 *big.Int, publicKey *ecdsa.PublicKey, paiPub *paillier.PublicKey, message string) *P2Context {
+func NewP2(bobPri, E_x1 *big.Int, publicKey *ecdsa.PublicKey, paiPub *paillier.PublicKey, message string, p1_ped *pedersen.PedersenParameters) *P2Context {
 	msg, err := hex.DecodeString(message)
 	if err != nil {
 		return nil
@@ -41,6 +44,7 @@ func NewP2(bobPri, E_x1 *big.Int, publicKey *ecdsa.PublicKey, paiPub *paillier.P
 		PublicKey: publicKey,
 		message:   message,
 		sessionID: sessionId,
+		p1_ped:    p1_ped,
 	}
 	return p2Context
 }
@@ -59,7 +63,7 @@ func (p2 *P2Context) Step1(cmtC *commitment.Commitment) (*schnorr.Proof, *curves
 }
 
 // Step2 paillier encrypt compute, return E[(h+xr)/k2]
-func (p2 *P2Context) Step2(cmtD *commitment.Witness, p1Proof *schnorr.Proof) (*big.Int, error) {
+func (p2 *P2Context) Step2(cmtD *commitment.Witness, p1Proof *schnorr.Proof) (*big.Int, *zkp.AffGProof, error) {
 	q := curve.N
 	// check R1=k1*G commitment
 	commit := commitment.HashCommitment{}
@@ -67,25 +71,25 @@ func (p2 *P2Context) Step2(cmtD *commitment.Witness, p1Proof *schnorr.Proof) (*b
 	commit.Msg = *cmtD
 	ok, commitD := commit.Open()
 	if !ok {
-		return nil, fmt.Errorf("commitment DeCommit fail")
+		return nil, nil, fmt.Errorf("commitment DeCommit fail")
 	}
 	if commitD[0].Cmp(p2.sessionID) != 0 {
-		return nil, fmt.Errorf("p2 Step2 commitment sessionId error")
+		return nil, nil, fmt.Errorf("p2 Step2 commitment sessionId error")
 	}
 	R1, err := curves.NewECPoint(curve, commitD[1], commitD[2])
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	verify := schnorr.VerifyWithId(p2.sessionID, p1Proof, R1)
 	if !verify {
-		return nil, fmt.Errorf("schnorr verify fail")
+		return nil, nil, fmt.Errorf("schnorr verify fail")
 	}
 	// R = k1*k2*G, k = k1*k2
 	Rx, _ := curve.ScalarMult(R1.X, R1.Y, p2.k2.Bytes())
 	r := new(big.Int).Mod(Rx, q)
 	bytes, err := hex.DecodeString(p2.message)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	k2_1 := new(big.Int).ModInverse(p2.k2, q)
 
@@ -96,20 +100,37 @@ func (p2 *P2Context) Step2(cmtD *commitment.Witness, p1Proof *schnorr.Proof) (*b
 	rhoq := new(big.Int).Mul(rho, q)
 	h_rhoq := new(big.Int).Add(h, rhoq) // h/k2 + rho*q
 
-	E_x, err := p2.paiPub.HomoAddPlain(p2.E_x1, p2.x2)
-	if err != nil {
-		return nil, err
+	paiPubKey := p2.paiPub
+	N2 := new(big.Int).Mul(paiPubKey.N, paiPubKey.N)
+
+	// s' = (h+r*(x1+x2))/k2 = a * x1 + b
+	// a = r/k2, b = h/k2 + rho * q + r/k2 * x2
+	a := new(big.Int).Mul(r, k2_1)                            // r/k2
+	b := new(big.Int).Add(h_rhoq, new(big.Int).Mul(a, p2.x2)) // h/k2 + rho*q + r/k2 * x2
+	rnd := crypto.RandomNum(paiPubKey.N)
+
+	a_x1, _ := paiPubKey.HomoMulPlain(p2.E_x1, a)
+	a_x1_b, _ := paiPubKey.HomoAddPlain(a_x1, b)
+	E_k2_h_xr := new(big.Int).Mod(new(big.Int).Mul(a_x1_b, new(big.Int).Exp(rnd, paiPubKey.N, N2)), N2)
+	A := curves.ScalarToPoint(curve, a)
+	B := curves.ScalarToPoint(curve, b)
+
+	st := &zkp.AffGStatement{
+		N: paiPubKey.N,
+		C: p2.E_x1,
+		D: E_k2_h_xr,
+		X: A,
+		Y: B,
 	}
-	r = new(big.Int).Mul(r, k2_1) //  r/k2
-	E_xr, err := p2.paiPub.HomoMulPlain(E_x, r)
-	if err != nil {
-		return nil, err
+
+	wit := &zkp.AffGWitness{
+		X:   a,
+		Y:   b,
+		Rho: rnd,
 	}
-	E_k2_h_xr, err := p2.paiPub.HomoAddPlain(E_xr, h_rhoq)
-	if err != nil {
-		return nil, err
-	}
-	return E_k2_h_xr, nil
+	aff_g_proof := zkp.PaillierAffineProve(p2.p1_ped, st, wit)
+
+	return E_k2_h_xr, aff_g_proof, nil
 }
 
 func CalculateM(hash []byte) *big.Int {
