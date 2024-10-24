@@ -11,6 +11,7 @@ import (
 	"github.com/okx/threshold-lib/tss"
 	"github.com/okx/threshold-lib/tss/key/bip32"
 	"github.com/okx/threshold-lib/tss/key/dkg"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -54,28 +55,37 @@ func TestKeyGen(t *testing.T) {
 	}
 
 	// 1-->2   1--->3
-	paiPriKey, _, _ := paillier.NewKeyPair(8)
+	paiPriKey, _, err := paillier.NewKeyPair(8)
+	require.NoError(t, err)
 	// ped2 should be provided by p2 to p1 for p1's proving and p2's verification.
 	p2_ped := &pedersen.PedersenParameters{S: preParams.H2i, T: preParams.H1i, Ntilde: preParams.NTildei}
 
-	p1Data, _, _, _ := P1(p1SaveData.ShareI, paiPriKey, setUp1.DeviceNumber, setUp2.DeviceNumber, preParams, p2_ped)
+	p1Data, _, _, err := P1(p1SaveData.ShareI, paiPriKey, setUp1.DeviceNumber, setUp2.DeviceNumber, preParams, p2_ped)
+	require.NoError(t, err)
 	fmt.Println("p1Data", p1Data)
 	publicKey, _ := curves.NewECPoint(curve, p2SaveData.PublicKey.X, p2SaveData.PublicKey.Y)
-	p2Data, _ := P2(p2SaveData.ShareI, publicKey, p1Data, setUp1.DeviceNumber, setUp2.DeviceNumber, p2_ped)
+	p2Data, err := P2(p2SaveData.ShareI, publicKey, p1Data, setUp1.DeviceNumber, setUp2.DeviceNumber, p2_ped)
+	require.NoError(t, err)
 	fmt.Println("p2Data", p2Data)
 
-	p1Data, _, _, _ = P1(p1SaveData.ShareI, paiPriKey, setUp1.DeviceNumber, setUp3.DeviceNumber, preParams, p2_ped)
+	p1Data, _, _, err = P1(p1SaveData.ShareI, paiPriKey, setUp1.DeviceNumber, setUp3.DeviceNumber, preParams, p2_ped)
+	require.NoError(t, err)
 	fmt.Println("p1Data", p1Data)
-	p2Data, _ = P2(p3SaveData.ShareI, publicKey, p1Data, setUp1.DeviceNumber, setUp3.DeviceNumber, p2_ped)
+	p2Data, err = P2(p3SaveData.ShareI, publicKey, p1Data, setUp1.DeviceNumber, setUp3.DeviceNumber, p2_ped)
+	require.NoError(t, err)
 	fmt.Println("p2Data", p2Data)
 
 	fmt.Println("=========bip32==========")
-	tssKey, _ := bip32.NewTssKey(p1SaveData.ShareI, p1SaveData.PublicKey, p1SaveData.ChainCode)
-	tssKey, _ = tssKey.NewChildKey(996)
+	tssKey, err := bip32.NewTssKey(p1SaveData.ShareI, p1SaveData.PublicKey, p1SaveData.ChainCode)
+	require.NoError(t, err)
+	tssKey, err = tssKey.NewChildKey(996)
+	require.NoError(t, err)
 	fmt.Println(tssKey.PublicKey())
 
-	tssKey, _ = bip32.NewTssKey(p2SaveData.ShareI, p2SaveData.PublicKey, p2SaveData.ChainCode)
-	tssKey, _ = tssKey.NewChildKey(996)
+	tssKey, err = bip32.NewTssKey(p2SaveData.ShareI, p2SaveData.PublicKey, p2SaveData.ChainCode)
+	require.NoError(t, err)
+	tssKey, err = tssKey.NewChildKey(996)
+	require.NoError(t, err)
 	fmt.Println(tssKey.PublicKey())
 
 }
