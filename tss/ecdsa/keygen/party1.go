@@ -6,14 +6,14 @@ import (
 	"math/big"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
-	"github.com/okx/threshold-lib/crypto"
-	"github.com/okx/threshold-lib/crypto/curves"
-	"github.com/okx/threshold-lib/crypto/paillier"
-	"github.com/okx/threshold-lib/crypto/pedersen"
-	"github.com/okx/threshold-lib/crypto/schnorr"
-	"github.com/okx/threshold-lib/crypto/vss"
-	"github.com/okx/threshold-lib/crypto/zkp"
-	"github.com/okx/threshold-lib/tss"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/curves"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/paillier"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/pedersen"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/schnorr"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/vss"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/zkp"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/tss"
 )
 
 var (
@@ -28,8 +28,13 @@ type PreParams struct {
 	P, Q        *big.Int
 }
 
-// GeneratePreParams  recommend to pre-generate locally
-func GeneratePreParams() *PreParams {
+type PreParamsWithDlnProof struct {
+	Params *PreParams
+	Proof  *zkp.DlnProof
+}
+
+// GeneratePreParams recommend to pre-generate locally
+func GeneratePreParamsWithDlnProof() *PreParamsWithDlnProof {
 	concurrency := 4
 	var values = make(chan *big.Int, concurrency)
 	var Pi, Qi *big.Int
@@ -65,7 +70,23 @@ func GeneratePreParams() *PreParams {
 		P:       pi,
 		Q:       qi,
 	}
-	return preParams
+	proof1 := zkp.NewDlnProve(h1i, h2i, alpha, pi, qi, NTildei)
+	return &PreParamsWithDlnProof{
+		Params: preParams,
+		Proof:  proof1,
+	}
+}
+
+func (p *PreParamsWithDlnProof) PedersonParameters() *pedersen.PedersenParameters {
+	return &pedersen.PedersenParameters{
+		S:      p.Params.H2i,
+		T:      p.Params.H1i,
+		Ntilde: p.Params.NTildei,
+	}
+}
+
+func (p *PreParamsWithDlnProof) Verify() bool {
+	return zkp.DlnVerify(p.Proof, p.Params.H1i, p.Params.H2i, p.Params.NTildei)
 }
 
 type P1Data struct {
@@ -76,46 +97,31 @@ type P1Data struct {
 
 	NoSmallFactorProof *zkp.NoSmallFactorProof
 	BlumProof          *zkp.PaillierBlumProof
-	DlnProof1          *zkp.DlnProof
-	DlnProof2          *zkp.DlnProof
-	Ped                *pedersen.PedersenParameters
 	X1RangeProof       *zkp.PaillierEncryptionRangeProof
+	DlnProof           *zkp.DlnProof
+	Ped1               *pedersen.PedersenParameters
 }
 
 // P1 after dkg, prepare for 2-party signature, P1 send encrypt x1 to P2
 // RPC: paillier key pair generation is time-consuming, generated in advance, encrypted storage?
-func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams *PreParams, p2_ped *pedersen.PedersenParameters) (*tss.Message, *big.Int, *pedersen.PedersenParameters, error) {
+func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParamsAndProof *PreParamsWithDlnProof, p2_ped *pedersen.PedersenParameters, p2_dlnproof *zkp.DlnProof) (*tss.Message, *big.Int, error) {
+	if !zkp.DlnVerify(p2_dlnproof, p2_ped.T, p2_ped.S, p2_ped.Ntilde) {
+		return nil, nil, fmt.Errorf("fail to verify dln proof for p2 pederson parameters. ")
+	}
 	// lagrangian interpolation x1
 	x1 := vss.CalLagrangian(curve, big.NewInt(int64(from)), share1, []*big.Int{big.NewInt(int64(from)), big.NewInt(int64(to))})
 	paiPubKey := &paiPriKey.PublicKey
 	// paillier encrypt x1
 	E_x1, r, err := paiPubKey.Encrypt(x1)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	// schnorr prove x1
 	X1 := curves.ScalarToPoint(curve, x1)
 	proof, err := schnorr.Prove(x1, X1)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-	if preParams == nil {
-		preParams = GeneratePreParams()
-	}
-	h1i, h2i, alpha, beta, p, q, NTildei :=
-		preParams.H1i,
-		preParams.H2i,
-		preParams.Alpha,
-		preParams.Beta,
-		preParams.P,
-		preParams.Q,
-		preParams.NTildei
-
-	// zkp DlnProof
-	// RPC: it should NOT be P1 to generate the proof.
-	p1_ped := &pedersen.PedersenParameters{S: h2i, T: h1i, Ntilde: NTildei}
-	dlnProof1 := zkp.NewDlnProve(h1i, h2i, alpha, p, q, NTildei)
-	dlnProof2 := zkp.NewDlnProve(h2i, h1i, beta, p, q, NTildei)
 
 	security_params := &zkp.SecurityParameter{
 		Q_bitlen: 64,
@@ -134,7 +140,7 @@ func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams
 	noSmallFactorProof := zkp.NoSmallFactorProve(paiPriKey.N, paiPriKey.P, paiPriKey.Q, l, p2_ped, securty_params)
 	blumProof, err := zkp.PaillierBlumProve(paiPriKey.N, paiPriKey.P, paiPriKey.Q)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("fail to generate blum proof due to error [%w]", err)
+		return nil, nil, fmt.Errorf("fail to generate blum proof due to error [%w]", err)
 	}
 
 	p1Data := P1Data{
@@ -144,20 +150,19 @@ func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams
 		X1:                 X1,
 		NoSmallFactorProof: noSmallFactorProof,
 		BlumProof:          blumProof,
-		DlnProof1:          dlnProof1,
-		DlnProof2:          dlnProof2,
-		Ped:                p1_ped,
+		Ped1:               preParamsAndProof.PedersonParameters(),
+		DlnProof:           preParamsAndProof.Proof,
 		X1RangeProof:       X1RangeProof,
 	}
 
 	bytes, err := json.Marshal(p1Data)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	message := &tss.Message{
 		From: from,
 		To:   to,
 		Data: string(bytes),
 	}
-	return message, E_x1, p1_ped, nil
+	return message, E_x1, nil
 }

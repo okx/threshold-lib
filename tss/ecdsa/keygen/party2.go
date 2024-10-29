@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/okx/threshold-lib/crypto/curves"
-	"github.com/okx/threshold-lib/crypto/paillier"
-	"github.com/okx/threshold-lib/crypto/pedersen"
-	"github.com/okx/threshold-lib/crypto/schnorr"
-	"github.com/okx/threshold-lib/crypto/vss"
-	"github.com/okx/threshold-lib/crypto/zkp"
-	"github.com/okx/threshold-lib/tss"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/curves"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/paillier"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/pedersen"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/schnorr"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/vss"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/zkp"
+	"gitlab.okg.com/wallet-sign-core/crypto-mpc/tss"
 )
 
 type P2SaveData struct {
@@ -63,15 +63,10 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 		return nil, fmt.Errorf("No small factor verify fail. ")
 	}
 
-	h1i, h2i, NTildei := p1Data.Ped.T, p1Data.Ped.S, p1Data.Ped.Ntilde
 	// zkp DlnProof verify
-	ok = zkp.DlnVerify(p1Data.DlnProof1, h1i, h2i, NTildei)
+	ok = zkp.DlnVerify(p1Data.DlnProof, p1Data.Ped1.T, p1Data.Ped1.S, p1Data.Ped1.Ntilde)
 	if !ok {
-		return nil, fmt.Errorf("DlnProof1 verify fail")
-	}
-	ok = zkp.DlnVerify(p1Data.DlnProof2, h2i, h1i, NTildei)
-	if !ok {
-		return nil, fmt.Errorf("DlnProof2 verify fail")
+		return nil, fmt.Errorf("DlnProof for Ped1 verify fail")
 	}
 
 	ok = zkp.GroupElementPaillierEncryptionRangeVerify(p1Data.X1RangeProof, ped2)
@@ -85,7 +80,7 @@ func P2(share2 *big.Int, publicKey *curves.ECPoint, msg *tss.Message, from, to i
 		E_x1:      p1Data.E_x1,
 		X2:        x2,
 		PaiPubKey: p1Data.PaiPubKey,
-		Ped1:      p1Data.Ped,
+		Ped1:      p1Data.Ped1,
 		Ped2:      ped2,
 	}
 	return p2SaveData, nil
