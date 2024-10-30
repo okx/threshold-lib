@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"math/big"
 
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/commitment"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/curves"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/paillier"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/pedersen"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/schnorr"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/zkp"
+	"github.com/okx/threshold-lib/crypto"
+	"github.com/okx/threshold-lib/crypto/commitment"
+	"github.com/okx/threshold-lib/crypto/curves"
+	"github.com/okx/threshold-lib/crypto/paillier"
+	"github.com/okx/threshold-lib/crypto/pedersen"
+	"github.com/okx/threshold-lib/crypto/schnorr"
+	"github.com/okx/threshold-lib/crypto/zkp"
 )
 
 type P2Context struct {

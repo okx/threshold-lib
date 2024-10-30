@@ -6,16 +6,16 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/okx/threshold-lib/crypto/curves"
+	"github.com/okx/threshold-lib/crypto/paillier"
 	"github.com/stretchr/testify/require"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/curves"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/paillier"
 
 	"testing"
 
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/tss"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/tss/ecdsa/keygen"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/tss/key/bip32"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/tss/key/dkg"
+	"github.com/okx/threshold-lib/tss"
+	"github.com/okx/threshold-lib/tss/ecdsa/keygen"
+	"github.com/okx/threshold-lib/tss/key/bip32"
+	"github.com/okx/threshold-lib/tss/key/dkg"
 )
 
 func TestEcdsaSign(t *testing.T) {

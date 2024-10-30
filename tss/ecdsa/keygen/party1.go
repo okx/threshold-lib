@@ -6,14 +6,14 @@ import (
 	"math/big"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/curves"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/paillier"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/pedersen"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/schnorr"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/vss"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/crypto/zkp"
-	"gitlab.okg.com/wallet-sign-core/crypto-mpc/tss"
+	"github.com/okx/threshold-lib/crypto"
+	"github.com/okx/threshold-lib/crypto/curves"
+	"github.com/okx/threshold-lib/crypto/paillier"
+	"github.com/okx/threshold-lib/crypto/pedersen"
+	"github.com/okx/threshold-lib/crypto/schnorr"
+	"github.com/okx/threshold-lib/crypto/vss"
+	"github.com/okx/threshold-lib/crypto/zkp"
+	"github.com/okx/threshold-lib/tss"
 )
 
 var (
@@ -97,7 +97,7 @@ type P1Data struct {
 
 	NoSmallFactorProof *zkp.NoSmallFactorProof
 	BlumProof          *zkp.PaillierBlumProof
-	X1RangeProof       *zkp.PaillierEncryptionRangeProof
+	X1RangeProof       *zkp.GroupElementPaillierEncryptionRangeProof
 	DlnProof           *zkp.DlnProof
 	Ped1               *pedersen.PedersenParameters
 }
@@ -129,8 +129,8 @@ func P1(share1 *big.Int, paiPriKey *paillier.PrivateKey, from, to int, preParams
 	}
 	// PDLwSlackStatement
 	q_bitlen := uint(X1.Curve.Params().N.BitLen())
-	X1RangeProof := zkp.NewPaillierEncryptionRangeProof(
-		paiPriKey.N, E_x1, x1, r, q_bitlen, p2_ped, security_params,
+	X1RangeProof := zkp.NewGroupElementPaillierEncryptionRangeProof(
+		paiPriKey.N, E_x1, x1, r, q_bitlen, X1, G, p2_ped, security_params,
 	)
 	l := uint(16)
 	securty_params := &zkp.SecurityParameter{

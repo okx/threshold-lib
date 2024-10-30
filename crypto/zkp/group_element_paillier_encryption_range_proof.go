@@ -4,18 +4,22 @@ import (
 	"math/big"
 
 	"github.com/okx/threshold-lib/crypto"
+	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
 	"github.com/okx/threshold-lib/crypto/pedersen"
 )
 
-type PaillierEncryptionRangeProof struct {
+// / Implementation of C.2 Group Element vs Paillier Encryption in Range ZK of https://eprint.iacr.org/2021/060.pdf
+// / A prover has secret input (x, rho) such that 0<=x<=2^L, and C = (1+N0)^x(rho)^N0 mod N0^2 is the paillier cipher text of x and X=g^x is the group element of curve for x.
+type GroupElementPaillierEncryptionRangeProof struct {
 	N0, C, Z1, Z2, Z3 *big.Int
+	X, G, Y           *curves.ECPoint
 	S, A, D           *big.Int
 	SecurityParams    *SecurityParameter
 	L                 uint
 }
 
-func NewPaillierEncryptionRangeProof(N0, C, x, rho *big.Int, l uint, ped *pedersen.PedersenParameters, security_params *SecurityParameter) *PaillierEncryptionRangeProof {
+func NewGroupElementPaillierEncryptionRangeProof(N0, C, x, rho *big.Int, l uint, X, G *curves.ECPoint, ped *pedersen.PedersenParameters, security_params *SecurityParameter) *GroupElementPaillierEncryptionRangeProof {
 	Ntilde := ped.Ntilde
 	range_l_plus_epsilon := new(big.Int).Lsh(one, l+security_params.Epsilon)
 	range_l := new(big.Int).Lsh(one, l)
@@ -29,9 +33,10 @@ func NewPaillierEncryptionRangeProof(N0, C, x, rho *big.Int, l uint, ped *peders
 	S, _ := ped.Commit(x, mu)
 	pubKey := &paillier.PublicKey{N: N0}
 	A, _ := pubKey.EncryptWithR(alpha, r)
+	Y := G.ScalarMult(alpha)
 	D, _ := ped.Commit(alpha, gamma)
 
-	e := crypto.SHA256Int(S, A, D, N0, C)
+	e := crypto.SHA256Int(S, A, Y.X, Y.Y, D, N0, C)
 	e = new(big.Int).Mod(e, range_q)
 
 	// z1 = alpha + ex
@@ -42,12 +47,15 @@ func NewPaillierEncryptionRangeProof(N0, C, x, rho *big.Int, l uint, ped *peders
 	// z3 = gamma +e*mu
 	z3 := new(big.Int).Add(gamma, new(big.Int).Mul(e, mu))
 
-	return &PaillierEncryptionRangeProof{
+	return &GroupElementPaillierEncryptionRangeProof{
 		N0:             N0,
 		C:              C,
 		Z1:             z1,
 		Z2:             z2,
 		Z3:             z3,
+		X:              X,
+		G:              G,
+		Y:              Y,
 		S:              S,
 		A:              A,
 		D:              D,
@@ -56,7 +64,7 @@ func NewPaillierEncryptionRangeProof(N0, C, x, rho *big.Int, l uint, ped *peders
 	}
 }
 
-func GroupElementPaillierEncryptionRangeVerify(proof *PaillierEncryptionRangeProof, ped *pedersen.PedersenParameters) bool {
+func GroupElementPaillierEncryptionRangeVerify(proof *GroupElementPaillierEncryptionRangeProof, ped *pedersen.PedersenParameters) bool {
 	// equality check
 	z1 := proof.Z1
 	z2 := proof.Z2
@@ -64,7 +72,7 @@ func GroupElementPaillierEncryptionRangeVerify(proof *PaillierEncryptionRangePro
 	range_q := new(big.Int).Lsh(one, proof.SecurityParams.Q_bitlen)
 	range_l_plus_epsilon := new(big.Int).Lsh(one, proof.L+proof.SecurityParams.Epsilon)
 
-	e := crypto.SHA256Int(proof.S, proof.A, proof.D, proof.N0, proof.C)
+	e := crypto.SHA256Int(proof.S, proof.A, proof.Y.X, proof.Y.Y, proof.D, proof.N0, proof.C)
 	e = new(big.Int).Mod(e, range_q)
 
 	pubKey := paillier.PublicKey{N: proof.N0}
@@ -75,6 +83,13 @@ func GroupElementPaillierEncryptionRangeVerify(proof *PaillierEncryptionRangePro
 	right := new(big.Int).Mul(proof.A, new(big.Int).Exp(proof.C, e, N0Sqr))
 	right = new(big.Int).Mod(right, N0Sqr)
 	if left.Cmp(right) != 0 {
+		return false
+	}
+
+	// Equality Check 2: g^z1=Y*X^e
+	left_point := proof.G.ScalarMult(z1)
+	right_point, _ := proof.Y.Add(proof.X.ScalarMult(e))
+	if !left_point.Equals(right_point) {
 		return false
 	}
 
