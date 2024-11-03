@@ -11,7 +11,9 @@ import (
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/curves"
 	"github.com/okx/threshold-lib/crypto/paillier"
+	"github.com/okx/threshold-lib/crypto/pedersen"
 	"github.com/okx/threshold-lib/crypto/schnorr"
+	"github.com/okx/threshold-lib/crypto/zkp"
 )
 
 var (
@@ -28,10 +30,12 @@ type P1Context struct {
 	message string
 	R2      *curves.ECPoint // k2*G
 	cmtD    *commitment.Witness
+	E_x1    *big.Int
+	p1_ped  *pedersen.PedersenParameters
 }
 
 // NewP1 2-party signature, P1 init
-func NewP1(publicKey *ecdsa.PublicKey, message string, paiPriKey *paillier.PrivateKey) *P1Context {
+func NewP1(publicKey *ecdsa.PublicKey, message string, paiPriKey *paillier.PrivateKey, E_x1 *big.Int, p1_ped *pedersen.PedersenParameters) *P1Context {
 	msg, err := hex.DecodeString(message)
 	if err != nil {
 		return nil
@@ -44,6 +48,8 @@ func NewP1(publicKey *ecdsa.PublicKey, message string, paiPriKey *paillier.Priva
 		message:   message,
 		paiPriKey: paiPriKey,
 		sessionID: sessionId,
+		E_x1:      E_x1,
+		p1_ped:    p1_ped,
 	}
 	return p1Context
 }
@@ -76,8 +82,22 @@ func (p1 *P1Context) Step2(p2Proof *schnorr.Proof, R2 *curves.ECPoint) (*schnorr
 	return proof, p1.cmtD, nil
 }
 
-func (p1 *P1Context) Step3(E_k2_h_xr *big.Int) (*big.Int, *big.Int, error) {
+func (p1 *P1Context) Step3(E_k2_h_xr *big.Int, affGProof *zkp.AffGProof) (*big.Int, *big.Int, error) {
 	q := curve.N
+	statement := &zkp.AffGStatement{
+		N: p1.paiPriKey.N,
+		C: p1.E_x1,
+		D: E_k2_h_xr,
+		X: affGProof.X,
+		Y: affGProof.Y,
+	}
+
+	verify := zkp.PaillierAffineVerify(p1.p1_ped, affGProof, statement)
+	if !verify {
+		BanSignList.Add(hex.EncodeToString(p1.publicKey.X.Bytes()))
+		return nil, nil, fmt.Errorf("paillier affine verify fail")
+	}
+
 	// R = k1*k2*G, k = k1*k2
 	Rx, _ := curve.ScalarMult(p1.R2.X, p1.R2.Y, p1.k1.Bytes())
 	r := new(big.Int).Mod(Rx, q)

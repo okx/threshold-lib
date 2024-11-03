@@ -99,3 +99,9 @@ func GenerateSafePrime(bits int, values chan *big.Int, quit chan int) (p *big.In
 		}
 	}
 }
+
+var zero = new(big.Int).SetInt64(0)
+
+func IsInInterval(b *big.Int, bound *big.Int) bool {
+	return b.Cmp(bound) == -1 && b.Cmp(zero) >= 0
+}
